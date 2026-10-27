@@ -1,0 +1,413 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+model Company {
+  id             String          @id @default(cuid())
+  name           String
+  tradeName      String?
+  cnpj           String          @unique
+  email          String?
+  phone          String?
+  active         Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  users          User[]
+  employees      Employee[]
+  departments    Department[]
+  positions      Position[]
+  workSchedules      WorkSchedule[]
+  timeEntries        TimeEntry[]
+  adjustmentRequests TimeAdjustmentRequest[]
+  timeBankPolicies             TimeBankPolicy[]
+  timeBankTransactions         TimeBankTransaction[]
+  timeBankCompensationRequests TimeBankCompensationRequest[]
+  vacationPeriods              VacationPeriod[]
+  vacationRequests             VacationRequest[]
+  employeeLeaves               EmployeeLeave[]
+  medicalCertificates          MedicalCertificate[]
+  employeeDocuments            EmployeeDocument[]
+  auditLogs          AuditLog[]
+}
+
+model User {
+  id           String    @id @default(cuid())
+  companyId    String?
+  name         String
+  email        String    @unique
+  passwordHash String
+  role         String    @default("COLABORADOR") // SUPER_ADMIN, ADMIN_EMPRESA, RH, GESTOR, COLABORADOR, CONTADOR
+  active       Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  company      Company?  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee     Employee?
+
+  auditLogs    AuditLog[]
+}
+
+model Department {
+  id        String     @id @default(cuid())
+  companyId String
+  name      String
+  code      String?
+  createdAt DateTime   @default(now())
+
+  company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employees Employee[]
+}
+
+model Position {
+  id          String     @id @default(cuid())
+  companyId   String
+  title       String
+  cboCode     String?
+  description String?
+  createdAt   DateTime   @default(now())
+
+  company     Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employees   Employee[]
+}
+
+model WorkSchedule {
+  id               String     @id @default(cuid())
+  companyId        String
+  name             String
+  type             String     @default("FIXA") // FIXA, FLEXIVEL, ESCALA_12X36, ESCALA_6X1, ESCALA_5X2
+  dailyHours       Float      @default(8.0)
+  weeklyHours      Float      @default(44.0)
+  expectedEntry    String     @default("08:00")
+  expectedExit     String     @default("17:00")
+  expectedBreak    String     @default("01:00")
+  daysOfWeek       String     @default("MON,TUE,WED,THU,FRI")
+  toleranceMinutes Int        @default(10)
+  validFrom        DateTime?
+  validUntil       DateTime?
+  nightShift       Boolean    @default(false)
+  breakFlexible    Boolean    @default(false)
+  description      String?
+  active           Boolean    @default(true)
+  createdAt        DateTime   @default(now())
+
+  company          Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employees        Employee[]
+}
+
+model Employee {
+  id                 String          @id @default(cuid())
+  companyId          String
+  userId             String?         @unique
+  fullName           String
+  cpf                String          @unique
+  email              String
+  phone              String?
+  birthDate          DateTime?
+  registrationNumber String?
+  departmentId       String?
+  positionId         String?
+  managerId          String?
+  admissionDate      DateTime
+  contractType       String          @default("CLT") // CLT, PJ, ESTAGIO, TEMPORARIO, APRENDIZ
+  status             String          @default("ATIVO") // ATIVO, INATIVO, AFASTADO, FERIAS
+  baseSalary         Float?          // Dado protegido por RBAC
+  workScheduleId     String?
+  timeBankPolicyId   String?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  company            Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user               User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  department         Department?     @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  position           Position?       @relation(fields: [positionId], references: [id], onDelete: SetNull)
+  workSchedule       WorkSchedule?   @relation(fields: [workScheduleId], references: [id], onDelete: SetNull)
+  timeBankPolicy     TimeBankPolicy? @relation(fields: [timeBankPolicyId], references: [id], onDelete: SetNull)
+  
+  manager            Employee?       @relation("ManagerSubordinates", fields: [managerId], references: [id], onDelete: SetNull)
+  subordinates       Employee[]      @relation("ManagerSubordinates")
+
+  timeEntries                  TimeEntry[]
+  adjustmentRequests           TimeAdjustmentRequest[]
+  timeBankTransactions         TimeBankTransaction[]
+  timeBankCompensationRequests TimeBankCompensationRequest[]
+  vacationPeriods              VacationPeriod[]
+  vacationRequests             VacationRequest[]
+  employeeLeaves               EmployeeLeave[]
+  medicalCertificates          MedicalCertificate[]
+  employeeDocuments            EmployeeDocument[]
+}
+
+model TimeEntry {
+  id                  String    @id @default(cuid())
+  companyId           String
+  employeeId          String
+  timestamp           DateTime  @default(now()) // Horário confiável do servidor
+  timezone            String    @default("America/Sao_Paulo")
+  type                String    // ENTRADA, INTERVALO_SAIDA, INTERVALO_RETORNO, SAIDA, MARCACAO_ADICIONAL
+  origin              String    @default("WEB") // WEB, MOBILE, REP
+  location            String?
+  ipAddress           String?
+  originalRecord      Boolean   @default(true) // Princípio REP-P: nunca sobrescrever
+  isTreated           Boolean   @default(false)
+  treatmentType       String?   // INCLUSAO_AJUSTE, CORRECAO_HORARIO, JUSTIFICATIVA
+  adjustmentRequestId String?
+  idempotencyKey      String?   @unique // Prevenção de duplicidade por idempotência
+  hashIntegrity       String?   // Hash SHA-256 de verificação de integridade
+  createdAt           DateTime  @default(now())
+
+  company             Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee            Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+model TimeAdjustmentRequest {
+  id            String    @id @default(cuid())
+  companyId     String
+  employeeId    String
+  date          DateTime
+  type          String    // ESQUECIMENTO, HORARIO_INCORRETO, PROBLEMA_TECNICO, ATESTADO, OUTRO
+  entryType     String?   // ENTRADA, INTERVALO_SAIDA, INTERVALO_RETORNO, SAIDA, MARCACAO_ADICIONAL
+  proposedTime  String?
+  justification String
+  attachmentUrl String?
+  idempotencyKey String?  @unique
+  status        String    @default("PENDENTE") // PENDENTE, EM_ANALISE, AGUARDANDO_INFORMACOES, APROVADA, RECUSADA, CANCELADA
+  reviewerId    String?
+  decisionNotes String?
+  decidedAt     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  company       Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee      Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id         String    @id @default(cuid())
+  companyId  String
+  userId     String?
+  action     String    // CREATE, UPDATE, DELETE, VIEW_SALARY, LOGIN
+  entity     String
+  entityId   String?
+  details    String?
+  ipAddress  String?
+  createdAt  DateTime  @default(now())
+
+  company    Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user       User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model TimeBankPolicy {
+  id                        String      @id @default(cuid())
+  companyId                 String
+  name                      String
+  compensationType          String      @default("BANCO_HORAS_PADRAO")
+  periodMonths              Int         @default(6) // 6 meses (CLT art. 59 § 5º) ou 12 meses (CCT)
+  validFrom                 DateTime    @default(now())
+  validUntil                DateTime?
+  maxDailyCreditMinutes     Int         @default(120) // Limite de 2 horas diárias (CLT art. 59)
+  maxNegativeBalanceMinutes Int         @default(2400) // Limite de 40 horas negativas
+  allowNegativeBalance      Boolean     @default(true)
+  creditRate                Float       @default(1.0) // Fator multiplicador de crédito (ex: 1.0 = 100%, 1.5 = 150%)
+  requireManagerApproval    Boolean     @default(true)
+  expiryAction              String      @default("PAGAR_FOLHA") // PAGAR_FOLHA, EXPIRAR, ACUMULAR
+  active                    Boolean     @default(true)
+  isDefault                 Boolean     @default(false)
+  createdAt                 DateTime    @default(now())
+  updatedAt                 DateTime    @updatedAt
+
+  company                   Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employees                 Employee[]
+  transactions              TimeBankTransaction[]
+}
+
+model TimeBankTransaction {
+  id              String          @id @default(cuid())
+  companyId       String
+  employeeId      String
+  policyId        String?
+  type            String          // CREDITO, DEBITO, AJUSTE_CREDITO, AJUSTE_DEBITO, COMPENSACAO, TRANSFERENCIA_PAGAMENTO, ESTORNO
+  minutes         Int             // Quantidade inteira de minutos
+  balanceAfter    Int?            // Saldo consolidado após a operação
+  competence      String          // YYYY-MM
+  origin          String          // APURACAO_PONTO, SOLICITACAO_COMPENSACAO, AJUSTE_GESTOR, LIQUIDACAO_FOLHA, FECHAMENTO_PERIODO
+  referenceId     String?         // Data da jornada, ID da solicitação de compensação ou ID de transação estornada
+  createdById     String?         // Usuário responsável pela operação
+  status          String          @default("CONSOLIDADO") // CONSOLIDADO, ESTORNADO, PENDENTE_CONFIRMACAO
+  idempotencyKey  String?         @unique // Idempotência nas operações financeiras de horas
+  description     String?
+  createdAt       DateTime        @default(now())
+
+  company         Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee        Employee        @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  policy          TimeBankPolicy? @relation(fields: [policyId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, employeeId])
+  @@index([companyId, competence])
+  @@index([referenceId])
+}
+
+model TimeBankCompensationRequest {
+  id                  String    @id @default(cuid())
+  companyId           String
+  employeeId          String
+  type                String    // FOLGA_INTEGRAL, SAIDA_ANTECIPADA, ENTRADA_POSTERIOR, REDUCAO_JORNADA
+  date                DateTime  // Data pretendida para a compensação
+  durationMinutes     Int       // Minutos a compensar
+  justification       String
+  status              String    @default("RESERVADA") // RESERVADA, APROVADA, RECUSADA, CANCELADA, REALIZADA
+  reviewedById        String?
+  decisionNotes       String?
+  decidedAt           DateTime?
+  idempotencyKey      String?   @unique
+  ledgerTransactionId String?   // ID da transação gerada no ledger ao aprovar
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  company             Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee            Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, employeeId])
+  @@index([companyId, status])
+}
+
+model VacationPeriod {
+  id                    String            @id @default(cuid())
+  companyId             String
+  employeeId            String
+  startDate             DateTime          // Início do período aquisitivo (CLT Art. 130)
+  endDate               DateTime          // Fim do período aquisitivo (12 meses após startDate)
+  concessiveStartDate   DateTime          // Início do período concessivo
+  concessiveEndDate     DateTime          // Fim do período concessivo (limite para dobra CLT Art. 137)
+  daysAcquired          Int               @default(30)
+  daysUsed              Int               @default(0)
+  daysSold              Int               @default(0) // Abono pecuniário (CLT Art. 143)
+  daysRemaining         Int               @default(30)
+  status                String            @default("ABERTO") // ABERTO, ADQUIRIDO, PROGRAMADO, PARCIALMENTE_USUFRUIDO, TOTALMENTE_USUFRUIDO, VENCIDO, PERDIDO
+  unjustifiedAbsences   Int               @default(0)
+  lostDaysJustification String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  company               Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee              Employee          @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  vacationRequests      VacationRequest[]
+
+  @@index([companyId, employeeId])
+  @@index([companyId, status])
+}
+
+model VacationRequest {
+  id                    String            @id @default(cuid())
+  companyId             String
+  employeeId            String
+  vacationPeriodId      String
+  startDate             DateTime          // Início do período de fruição
+  endDate               DateTime          // Fim do período de fruição
+  daysCount             Int               // Duração do período (min 5, pelo menos um de 14 dias se fracionado)
+  sellDays              Int               @default(0) // Dias convertidos em abono pecuniário (máx 10 dias)
+  fractionNumber        Int               @default(1) // 1, 2 ou 3 (fracionamento CLT Art. 134 § 1º)
+  status                String            @default("PENDENTE") // PENDENTE, EM_ANALISE, APROVADA, PROGRAMADA, EM_GOZO, CONCLUIDA, RECUSADA, CANCELADA
+  reviewedById          String?
+  decisionNotes         String?
+  decidedAt             DateTime?
+  employeeNotes         String?
+  advance13th           Boolean           @default(false)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  company               Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee              Employee          @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  vacationPeriod        VacationPeriod    @relation(fields: [vacationPeriodId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, employeeId])
+  @@index([vacationPeriodId])
+  @@index([companyId, status])
+}
+
+model EmployeeLeave {
+  id                    String            @id @default(cuid())
+  companyId             String
+  employeeId            String
+  type                  String            // DOENCA_ATE_15D, DOENCA_INSS, ACIDENTE_TRABALHO, MATERNIDADE, PATERNIDADE, CASAMENTO, LUTO, DOACAO_SANGUE, ALISTAMENTO_ELEITORAL, SERVICO_MILITAR, AFASTAMENTO_ADMINISTRATIVO, OUTROS
+  startDate             DateTime
+  endDate               DateTime?
+  expectedReturnDate    DateTime?
+  actualReturnDate      DateTime?
+  reason                String
+  cidCode               String?           // Dado sensível (LGPD / CFM)
+  status                String            @default("ATIVO") // PENDENTE, ATIVO, CONCLUIDO, CANCELADO, RECUSADO
+  approvedById          String?
+  approvedAt            DateTime?
+  notes                 String?
+  documentUrl           String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  company               Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee              Employee          @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  medicalCertificates   MedicalCertificate[]
+
+  @@index([companyId, employeeId])
+  @@index([companyId, status])
+}
+
+model MedicalCertificate {
+  id                    String            @id @default(cuid())
+  companyId             String
+  employeeId            String
+  issueDate             DateTime
+  startDate             DateTime
+  daysOff               Int               // Quantidade de dias de afastamento médico
+  doctorName            String?
+  crmNumber             String?
+  crmState              String?
+  cidCode               String?           // Dado pessoal sensível - restrito
+  justification         String?
+  documentUrl           String?
+  status                String            @default("PENDENTE") // PENDENTE, EM_ANALISE, APROVADO, RECUSADO
+  reviewedById          String?
+  decisionNotes         String?
+  decidedAt             DateTime?
+  employeeLeaveId       String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  company               Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee              Employee          @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeLeave         EmployeeLeave?    @relation(fields: [employeeLeaveId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, employeeId])
+  @@index([companyId, status])
+}
+
+model EmployeeDocument {
+  id                    String            @id @default(cuid())
+  companyId             String
+  employeeId            String
+  category              String            // ADMISSIONAL, CONTRATUAL, ATESTADO, AVISO_FERIAS, RECIBO_FERIAS, DECLARACAO, OUTROS
+  title                 String
+  fileName              String
+  fileKey               String            // Caminho de armazenamento seguro (fora de diretório público)
+  fileSize              Int               // Tamanho em bytes
+  mimeType              String            // MIME type (application/pdf, image/png, etc.)
+  uploadedById          String
+  isConfidential        Boolean           @default(false)
+  referenceType         String?           // VACATION, LEAVE, CERTIFICATE, EMPLOYEE
+  referenceId           String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  company               Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee              Employee          @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, employeeId])
+  @@index([companyId, category])
+}
+

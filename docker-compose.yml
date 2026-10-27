@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: pontuarh-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: pontuarh
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pontuarh_dev_secret}
+      POSTGRES_DB: pontuarh_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    container_name: pontuarh-backend
+    restart: always
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://pontuarh:pontuarh_dev_secret@postgres:5432/pontuarh_db?schema=public}
+      JWT_SECRET: "pontuarh-jwt-super-secret-key-production-ready"
+      PORT: 3001
+    ports:
+      - "3001:3001"
+    depends_on:
+      - postgres
+
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+    container_name: pontuarh-frontend
+    restart: always
+    environment:
+      NEXT_PUBLIC_API_URL: "http://localhost:3001/api"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
