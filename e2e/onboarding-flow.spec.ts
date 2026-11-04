@@ -43,6 +43,14 @@ test.describe('Pontua RH — Fase 6.3: Onboarding e Configuração Inicial de Em
   const validCpf = generateValidCPF();
 
   test('Fluxo Completo de Onboarding: Criação pelo Super Admin, Ativação de Plano, Configuração em 5 Etapas e Isolamento', async ({ page }) => {
+    page.on('console', msg => console.log('PAGE LOG:', msg.text()));
+    page.on('pageerror', err => console.log('PAGE ERROR:', err.message));
+    page.on('response', res => {
+      if (res.status() >= 400) {
+        console.log('HTTP ERROR:', res.status(), res.url());
+      }
+    });
+
     // ----------------------------------------------------
     // ETAPA A: SUPER ADMIN PROVISIONA A EMPRESA E O PLANO
     // ----------------------------------------------------
@@ -87,6 +95,12 @@ test.describe('Pontua RH — Fase 6.3: Onboarding e Configuração Inicial de Em
     await assignPlanBtn.click();
 
     await expect(page.locator('text=Atribuir ou Alterar Plano SaaS')).toBeVisible({ timeout: 10000 });
+    const planSelect = page.locator('select').first();
+    await planSelect.waitFor({ state: 'visible' });
+    const firstOptionVal = await planSelect.locator('option:not([disabled])').first().getAttribute('value');
+    if (firstOptionVal) {
+      await planSelect.selectOption(firstOptionVal);
+    }
     await page.locator('button:has-text("Confirmar")').click();
 
     await expect(page.locator('text=Plano da empresa configurado com sucesso!').first()).toBeVisible({ timeout: 15000 });

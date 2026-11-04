@@ -42,7 +42,7 @@ export default defineConfig({
       },
     },
     {
-      command: 'npm --workspace=@pontuarh/frontend run dev',
+      command: 'npm --workspace=@pontuarh/frontend run start',
       port: 3000,
       timeout: 120 * 1000,
       reuseExistingServer: false,

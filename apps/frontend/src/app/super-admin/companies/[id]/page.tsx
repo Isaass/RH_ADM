@@ -150,6 +150,13 @@ export default function CompanyDetailPage() {
   const [cancelSubReason, setCancelSubReason] = useState('');
   const [submittingCancelSub, setSubmittingCancelSub] = useState(false);
 
+  useEffect(() => {
+    if (changePlanModalOpen && !selectedPlanId && allPlans.length > 0) {
+      const active = allPlans.find((p) => p.active) || allPlans[0];
+      if (active) setSelectedPlanId(active.id);
+    }
+  }, [changePlanModalOpen, selectedPlanId, allPlans]);
+
   const loadData = async () => {
     try {
       setLoading(true);
@@ -178,8 +185,11 @@ export default function CompanyDetailPage() {
       setSubscriptionHistory(subRes?.history || []);
       setAllPlans(plansRes || []);
 
+      const activePlans = (plansRes || []).filter((p: Plan) => p.active);
       if (subRes?.subscription) {
         setSelectedPlanId(subRes.subscription.planId);
+      } else if (activePlans.length > 0) {
+        setSelectedPlanId(activePlans[0].id);
       } else if (plansRes && plansRes.length > 0) {
         setSelectedPlanId(plansRes[0].id);
       }
@@ -344,20 +354,37 @@ export default function CompanyDetailPage() {
   };
 
   // Funções de Gestão de Assinatura (Fase 6.2)
+  const handleOpenChangePlanModal = () => {
+    const activePlans = allPlans.filter((p) => p.active);
+    if (subscription) {
+      setSelectedPlanId(subscription.planId);
+    } else if (activePlans.length > 0) {
+      setSelectedPlanId(activePlans[0].id);
+    } else if (allPlans.length > 0) {
+      setSelectedPlanId(allPlans[0].id);
+    }
+    setPlanChangeReason('');
+    setChangePlanModalOpen(true);
+  };
+
   const handleChangeSubscriptionPlan = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedPlanId) return;
+    const effectivePlanId = selectedPlanId || allPlans.find((p) => p.active)?.id || allPlans[0]?.id;
+    if (!effectivePlanId) {
+      setFeedback({ type: 'error', message: 'Nenhum plano disponível para seleção.' });
+      return;
+    }
     setSubmittingChangePlan(true);
 
     try {
       if (subscription) {
         await api.put(`/platform/companies/${companyId}/subscription`, {
-          newPlanId: selectedPlanId,
+          newPlanId: effectivePlanId,
           reason: planChangeReason,
         });
       } else {
         await api.post(`/platform/companies/${companyId}/subscription`, {
-          planId: selectedPlanId,
+          planId: effectivePlanId,
           periodicity: 'MENSAL',
           status: 'ATIVA',
           notes: planChangeReason,
@@ -1023,7 +1050,7 @@ export default function CompanyDetailPage() {
               <Button
                 variant="outline"
                 className="text-xs border-purple-300 text-purple-700 hover:bg-purple-50"
-                onClick={() => setChangePlanModalOpen(true)}
+                onClick={handleOpenChangePlanModal}
               >
                 <Sparkles className="w-3.5 h-3.5 mr-1.5" />
                 {subscription ? 'Alterar Plano' : 'Atribuir Plano'}
@@ -1188,7 +1215,7 @@ export default function CompanyDetailPage() {
               <Button
                 variant="primary"
                 className="mt-4 bg-purple-600 text-xs"
-                onClick={() => setChangePlanModalOpen(true)}
+                onClick={handleOpenChangePlanModal}
               >
                 <Sparkles className="w-3.5 h-3.5 mr-1.5" />
                 Atribuir Plano Agora
@@ -1356,14 +1383,16 @@ export default function CompanyDetailPage() {
               <select
                 required
                 className="w-full text-xs p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                value={selectedPlanId}
+                value={selectedPlanId || allPlans.find((p) => p.active)?.id || ''}
                 onChange={(e) => setSelectedPlanId(e.target.value)}
               >
-                {allPlans.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} ({p.code}) — {formatCurrencyBRL(p.monthlyPrice)}/mês • Até {p.maxEmployees} colabs
-                  </option>
-                ))}
+                {allPlans
+                  .filter((p) => p.active || p.id === subscription?.planId)
+                  .map((p) => (
+                    <option key={p.id} value={p.id} disabled={!p.active && p.id !== subscription?.planId}>
+                      {p.name} ({p.code}) {!p.active ? '• [DESATIVADO]' : ''} — {formatCurrencyBRL(p.monthlyPrice)}/mês • Até {p.maxEmployees} colabs
+                    </option>
+                  ))}
               </select>
             </div>
 

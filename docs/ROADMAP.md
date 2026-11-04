@@ -275,6 +275,49 @@ gantt
 
 ---
 
+### 🟢 FINALIZAÇÃO FUNCIONAL: ETAPA 2 — Refinamento de Interfaces e Experiência do Usuário (Status: Concluída)
+- [x] **Blindagem Rigorosa do Ambiente de Testes & Banco de Dados**:
+  - Trava de proteção em tempo de execução no construtor do `PrismaService`: aborto imediato com exceção fatal `[SEGURANÇA BLOQUEADA]` caso testes unitários/integração sejam disparados apontando para qualquer banco que não contenha `test_db` ou `_test`.
+  - Configuração de `apps/backend/test/setup.ts` integrado ao `vitest.config.ts` e guard de banco no `playwright.config.ts`.
+  - 2 testes unitários dedicados em `apps/backend/test/db-guard.test.ts` validando a trava de segurança.
+- [x] **Migração Versionada e Idempotente de Backfill de Onboarding**:
+  - Criação da migração Prisma versionada `apps/backend/prisma/migrations/20261103220000_backfill_legacy_companies_onboarding/migration.sql`.
+  - Deploy aplicado no banco isolado `pontuarh_test_db`, garantindo que empresas legadas com estrutura operacional completa (departamentos, cargos, jornadas e colaboradores) tenham `onboardingCompleted = true` e `onboardingStep = 5`, enquanto tenants incompletos permaneçam `false` e `1`.
+- [x] **Padronização de Máscaras e Formatação Visual em Tempo Real**:
+  - Adição de funções de máscara e validação oficial de CEP no pacote `@pontuarh/shared`: `formatCEP` e `isValidCEP`, complementando `formatCPF`, `formatCNPJ`, `formatPhoneBR` e `formatCurrencyBRL`.
+  - Cobertura de testes unitários em `apps/backend/test/cpf.test.ts` (8 testes aprovados).
+  - Aplicação de máscaras de digitação em tempo real em todas as telas de cadastro e edição:
+    - `/super-admin/companies/new` e `/super-admin/companies/[id]` (CNPJ, Telefone, CEP);
+    - `/admin/company` (Telefone, CEP);
+    - `/admin/onboarding` (Telefone e CEP na Etapa 1; CPF e Telefone na Etapa 4);
+    - `/admin/employees/new` e `/admin/employees/[id]` (Telefone e CPF).
+- [x] **Eliminação de Modais Nativos e Refinamento de UX Contextual**:
+  - Remoção de todos os `alert(...)` nativos do navegador no frontend:
+    - Substituição por banners de alerta contextuais inline em `/admin/departments/page.tsx` (Departamentos e Cargos);
+    - Substituição por modal de confirmação dedicado (`Modal.tsx`) em `/admin/employees/page.tsx` para inativação e reativação de colaboradores.
+  - Substituição de mensagem estática "Fase 2" no rodapé do `AdminSidebar.tsx` por nome dinâmico da empresa contratante e perfil ativo do usuário.
+  - Implementação de modal de edição corporativa em `/admin/company` integrado a `PUT /api/companies/current` com máscaras e toast de feedback.
+  - Correção no modal de atribuição de planos SaaS em `/super-admin/companies/[id]`: filtro restrito a planos ativos (`p.active`), seleção automática do primeiro plano ativo e sincronização garantida no envio.
+- [x] **Auditoria e Otimização de Responsividade Multi-Resolução**:
+  - Prevenção global de scroll horizontal involuntário com `overflow-x: hidden` e `max-width: 100vw` no `globals.css` e nas páginas de login e navegação.
+  - Reorganização de filtros e listas em telas compactas (360px e 390px): quebra responsiva com `flex-wrap` e grid adaptativo nos botões de demonstração e listagens.
+  - Menu responsivo lateral (Mobile Drawer) funcional com controle de abertura e fechamento por botão hamburger.
+  - Validação estrita sem overflow horizontal em 5 resoluções oficiais de referência: 360px, 390px, 768px, 1280px e 1920px.
+- [x] **Bateria Completa de Homologação Automatizada**:
+  - **Vitest**: 187 testes unitários e de integração aprovados em 16 suítes (100% de sucesso).
+  - **Playwright**: 14 testes ponta a ponta (E2E) aprovados em 7 suítes completas (100% de sucesso):
+    - `ux-responsiveness.spec.ts` (4 cenários: viewports 360-1920px, mobile drawer, modais/máscaras, portal mobile);
+    - `stabilization-integration.spec.ts` (3 cenários: gestão de colaboradores, folha financeira, RBAC);
+    - `subscriptions-flow.spec.ts` (3 cenários: planos SaaS, assinaturas, consulta do tenant);
+    - `onboarding-flow.spec.ts` (1 cenário: provisionamento, ativação, 5 etapas de onboarding e isolamento);
+    - `time-flow.spec.ts` (1 cenário: fluxo operacional de ponto em 10 passos);
+    - `time-bank-flow.spec.ts` (1 cenário: fluxo operacional de banco de horas e ledger);
+    - `vacations-flow.spec.ts` (1 cenário: ciclo completo de férias, afastamentos e reflexo no espelho).
+  - **Compilação TypeScript**: zero erros no backend e frontend (`tsc --noEmit`).
+  - **Build de Produção**: 29 rotas estáticas e dinâmicas geradas com sucesso (`next build`).
+
+---
+
 ### ⚪ FASE 7 — Homologação Trabalhista e Conformidade Legal
 - [ ] Emissão de arquivos fiscais e comprovantes digitais (AFD, AEJ, comprovante do colaborador conforme Portaria MTP 671/2021).
 - [ ] Integração com certificação digital ICP-Brasil (A1/A3) para assinatura digital do espelho de ponto.

@@ -60,10 +60,19 @@ test.describe('Pontua RH — Ciclo Completo de Férias, Afastamentos e Atestados
   test('Fluxo E2E: Colaborador consulta saldo -> Solicita férias com prévia -> Gestor aprova -> Saldo atualizado -> Espelho de ponto reflete ocorrência', async ({
     page,
   }) => {
-    // ------------------------------------------------------------------------
+    page.on('console', msg => console.log('PAGE LOG:', msg.text()));
+    page.on('pageerror', err => console.log('PAGE ERROR:', err.message));
+    page.on('response', res => {
+      if (res.status() >= 400) {
+        console.log('HTTP ERROR:', res.status(), res.url());
+      }
+    });
+
+    // -------------------------------------------------------------
     // PASSO 1: Colaborador realiza login
-    // ------------------------------------------------------------------------
+    // -------------------------------------------------------------
     await page.goto('/login');
+    await page.waitForLoadState('networkidle');
     await expect(page.locator('h2')).toContainText('Acesse sua conta');
 
     await page.fill('input[type="email"]', colabEmail);
@@ -107,10 +116,11 @@ test.describe('Pontua RH — Ciclo Completo de Férias, Afastamentos e Atestados
     await expect(page.locator('text=PENDENTE').first()).toBeVisible({ timeout: 10000 });
     await expect(page.locator('text=15 dias').first()).toBeVisible();
 
-    // ------------------------------------------------------------------------
+    // -------------------------------------------------------------
     // PASSO 5: Gestor realiza login
-    // ------------------------------------------------------------------------
+    // -------------------------------------------------------------
     await page.goto('/login');
+    await page.waitForLoadState('networkidle');
     await page.fill('input[type="email"]', gestorEmail);
     await page.fill('input[type="password"]', gestorPass);
     await page.click('button[type="submit"]');
@@ -148,10 +158,11 @@ test.describe('Pontua RH — Ciclo Completo de Férias, Afastamentos e Atestados
     await page.click('button:has-text("Períodos & Saldos")');
     await expect(page.locator('text=15d').first()).toBeVisible({ timeout: 10000 });
 
-    // ------------------------------------------------------------------------
+    // -------------------------------------------------------------
     // PASSO 9: Colaborador valida suas férias aprovadas no portal
-    // ------------------------------------------------------------------------
+    // -------------------------------------------------------------
     await page.goto('/login');
+    await page.waitForLoadState('networkidle');
     await page.fill('input[type="email"]', colabEmail);
     await page.fill('input[type="password"]', colabPass);
     await page.click('button[type="submit"]');
