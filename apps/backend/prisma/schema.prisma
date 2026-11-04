@@ -9,15 +9,28 @@ datasource db {
 }
 
 model Company {
-  id             String          @id @default(cuid())
-  name           String
-  tradeName      String?
-  cnpj           String          @unique
-  email          String?
-  phone          String?
-  active         Boolean         @default(true)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  id                String          @id @default(cuid())
+  name              String
+  tradeName         String?
+  cnpj              String          @unique
+  email             String?
+  phone             String?
+  active            Boolean         @default(true)
+  status            String          @default("ATIVA") // ATIVA, SUSPENSA
+  street            String?
+  number            String?
+  complement        String?
+  neighborhood      String?
+  city              String?
+  state             String?
+  zipCode           String?
+  suspensionReason  String?
+  suspendedAt       DateTime?
+  suspendedById     String?
+  onboardingCompleted Boolean       @default(false)
+  onboardingStep      Int           @default(1)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 
   users          User[]
   employees      Employee[]
@@ -34,6 +47,11 @@ model Company {
   employeeLeaves               EmployeeLeave[]
   medicalCertificates          MedicalCertificate[]
   employeeDocuments            EmployeeDocument[]
+  payrollCompetences           PayrollCompetence[]
+  payrollSummaries             PayrollEmployeeSummary[]
+  payrollItems                 PayrollItem[]
+  subscription                 Subscription?
+  subscriptionHistories        SubscriptionHistory[]
   auditLogs          AuditLog[]
 }
 
@@ -142,6 +160,8 @@ model Employee {
   employeeLeaves               EmployeeLeave[]
   medicalCertificates          MedicalCertificate[]
   employeeDocuments            EmployeeDocument[]
+  payrollSummaries             PayrollEmployeeSummary[]
+  payrollItems                 PayrollItem[]
 }
 
 model TimeEntry {
@@ -190,16 +210,16 @@ model TimeAdjustmentRequest {
 
 model AuditLog {
   id         String    @id @default(cuid())
-  companyId  String
+  companyId  String?
   userId     String?
-  action     String    // CREATE, UPDATE, DELETE, VIEW_SALARY, LOGIN
+  action     String    // CREATE, UPDATE, DELETE, VIEW_SALARY, LOGIN, CREATE_COMPANY, SUSPEND_COMPANY, etc.
   entity     String
   entityId   String?
   details    String?
   ipAddress  String?
   createdAt  DateTime  @default(now())
 
-  company    Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company    Company?  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   user       User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
 
@@ -409,5 +429,149 @@ model EmployeeDocument {
 
   @@index([companyId, employeeId])
   @@index([companyId, category])
+}
+
+model PayrollCompetence {
+  id              String                   @id @default(cuid())
+  companyId       String
+  competence      String                   // Formato 'YYYY-MM' (ex: '2026-10')
+  status          String                   @default("ABERTA") // ABERTA, FECHADA
+  totalEmployees  Int                      @default(0)
+  totalGross      Float                    @default(0.0) // Soma de proventos
+  totalDeductions Float                    @default(0.0) // Soma de descontos
+  totalNet        Float                    @default(0.0) // Líquido = totalGross - totalDeductions
+  closedAt        DateTime?
+  closedById      String?
+  notes           String?
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+
+  company         Company                  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  summaries       PayrollEmployeeSummary[]
+
+  @@unique([companyId, competence])
+  @@index([companyId, status])
+}
+
+model PayrollEmployeeSummary {
+  id                  String             @id @default(cuid())
+  payrollCompetenceId String
+  companyId           String
+  employeeId          String
+  baseSalary          Float              // Snapshot do salário base na competência
+  totalEarnings       Float              @default(0.0) // Total de proventos
+  totalDeductions     Float              @default(0.0) // Total de descontos
+  netSalary           Float              @default(0.0) // Líquido = totalEarnings - totalDeductions
+  overtimeHours       Float              @default(0.0) // Horas extras apuradas
+  overtimeAmount      Float              @default(0.0) // Valor das horas extras
+  timeBankAmount      Float              @default(0.0) // Valor do banco de horas liquidado
+  vacationAmount      Float              @default(0.0) // Valor de férias/abono/1/3 no mês
+  otherEarnings       Float              @default(0.0) // Outros proventos / adicionais manuais
+  otherDeductions     Float              @default(0.0) // Outros descontos manuais
+  notes               String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  payrollCompetence   PayrollCompetence  @relation(fields: [payrollCompetenceId], references: [id], onDelete: Cascade)
+  company             Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee            Employee           @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  items               PayrollItem[]
+
+  @@unique([payrollCompetenceId, employeeId])
+  @@index([companyId, employeeId])
+}
+
+model PayrollItem {
+  id         String                  @id @default(cuid())
+  summaryId  String
+  companyId  String
+  employeeId String
+  type       String                  // PROVENTO, DESCONTO
+  category   String                  // SALARIO_BASE, HORAS_EXTRAS, DSR, BANCO_HORAS_PAGO, FERIAS, ADICIONAL_MANUAL, DESCONTO_MANUAL, BENEFICIO, ADIANTAMENTO
+  code       String                  // Ex: '001', '101', '201', '301'
+  name       String                  // Descrição da rubrica
+  reference  String?                 // Ex: '30 dias', '05:30h', '10 dias'
+  amount     Float                   // Valor monetário em R$
+  isManual   Boolean                 @default(false)
+  createdAt  DateTime                @default(now())
+
+  summary    PayrollEmployeeSummary  @relation(fields: [summaryId], references: [id], onDelete: Cascade)
+  company    Company                 @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee   Employee                @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([summaryId])
+  @@index([companyId, employeeId])
+}
+
+model Plan {
+  id            String   @id @default(cuid())
+  name          String
+  code          String   @unique
+  description   String?
+  monthlyPrice  Decimal  @db.Decimal(10, 2)
+  annualPrice   Decimal? @db.Decimal(10, 2)
+  maxEmployees  Int      @default(10)
+  maxUsers      Int      @default(2)
+  maxAdmins     Int      @default(1)
+  features      String[]
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  subscriptions         Subscription[]
+  subscriptionHistories SubscriptionHistory[]
+
+  @@index([code])
+  @@index([active])
+}
+
+model Subscription {
+  id           String    @id @default(cuid())
+  companyId    String    @unique
+  planId       String
+  periodicity  String    @default("MENSAL") // MENSAL, ANUAL
+  startDate    DateTime  @default(now())
+  endDate      DateTime?
+  status       String    @default("ATIVA") // EM_TESTE, ATIVA, EXPIRADA, CANCELADA
+  price        Decimal   @db.Decimal(10, 2)
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  company      Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  plan         Plan      @relation(fields: [planId], references: [id], onUpdate: Cascade)
+  histories    SubscriptionHistory[]
+
+  @@index([companyId, status])
+  @@index([planId])
+  @@index([status])
+}
+
+model SubscriptionHistory {
+  id              String    @id @default(cuid())
+  subscriptionId  String?
+  companyId       String
+  planId          String
+  planName        String
+  planCode        String
+  action          String    // CRIACAO, TROCA_PLANO, RENOVACAO, CANCELAMENTO, EXPIRACAO, ALTERACAO_STATUS
+  previousStatus  String?
+  newStatus       String
+  price           Decimal   @db.Decimal(10, 2)
+  periodicity     String    @default("MENSAL")
+  startDate       DateTime
+  endDate         DateTime?
+  performedById   String?
+  performedByName String?
+  reason          String?
+  createdAt       DateTime  @default(now())
+
+  subscription    Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  company         Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  plan            Plan          @relation(fields: [planId], references: [id], onUpdate: Cascade)
+
+  @@index([companyId, createdAt])
+  @@index([subscriptionId])
+  @@index([planId])
 }
 

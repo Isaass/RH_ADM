@@ -160,3 +160,66 @@ export enum DocumentCategory {
   OUTROS = 'OUTROS',
 }
 
+export enum PayrollCompetenceStatus {
+  ABERTA = 'ABERTA',
+  FECHADA = 'FECHADA',
+}
+
+export enum PayrollItemType {
+  PROVENTO = 'PROVENTO',
+  DESCONTO = 'DESCONTO',
+}
+
+export enum PayrollItemCategory {
+  SALARIO_BASE = 'SALARIO_BASE',
+  HORAS_EXTRAS = 'HORAS_EXTRAS',
+  DSR = 'DSR',
+  BANCO_HORAS_PAGO = 'BANCO_HORAS_PAGO',
+  FERIAS = 'FERIAS',
+  ADICIONAL_MANUAL = 'ADICIONAL_MANUAL',
+  DESCONTO_MANUAL = 'DESCONTO_MANUAL',
+  BENEFICIO = 'BENEFICIO',
+  ADIANTAMENTO = 'ADIANTAMENTO',
+  OUTRO = 'OUTRO',
+}
+
+export enum CompanyStatus {
+  ATIVA = 'ATIVA',
+  SUSPENSA = 'SUSPENSA',
+}
+
+export enum PlanFeature {
+  DASHBOARD = 'DASHBOARD',
+  COLABORADORES = 'COLABORADORES',
+  PONTO_ELETRONICO = 'PONTO_ELETRONICO',
+  ESPELHO_PONTO = 'ESPELHO_PONTO',
+  AJUSTES = 'AJUSTES',
+  BANCO_HORAS = 'BANCO_HORAS',
+  FERIAS = 'FERIAS',
+  DOCUMENTOS = 'DOCUMENTOS',
+  FOLHA_PAGAMENTO = 'FOLHA_PAGAMENTO',
+  RELATORIOS = 'RELATORIOS',
+}
+
+export enum SubscriptionStatus {
+  EM_TESTE = 'EM_TESTE',
+  ATIVA = 'ATIVA',
+  EXPIRADA = 'EXPIRADA',
+  CANCELADA = 'CANCELADA',
+}
+
+export enum SubscriptionPeriodicity {
+  MENSAL = 'MENSAL',
+  ANUAL = 'ANUAL',
+}
+
+export enum SubscriptionAction {
+  CRIACAO = 'CRIACAO',
+  TROCA_PLANO = 'TROCA_PLANO',
+  RENOVACAO = 'RENOVACAO',
+  CANCELAMENTO = 'CANCELAMENTO',
+  EXPIRACAO = 'EXPIRACAO',
+  ALTERACAO_STATUS = 'ALTERACAO_STATUS',
+}
+
+

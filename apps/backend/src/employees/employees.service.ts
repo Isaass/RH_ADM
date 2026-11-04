@@ -156,6 +156,34 @@ export class EmployeesService {
       throw new Error('Já existe um colaborador cadastrado com este CPF.');
     }
 
+    // Verificar limites do plano SaaS contratado (Fase 6.2)
+    const subscription = await prisma.subscription.findUnique({
+      where: { companyId: user.companyId },
+      include: { plan: true },
+    });
+
+    if (subscription && subscription.plan) {
+      if (subscription.status === 'EXPIRADA' || (subscription.endDate && new Date() > subscription.endDate)) {
+        throw new Error('A assinatura da empresa está expirada. Renove o plano para cadastrar novos colaboradores.');
+      }
+      if (subscription.status === 'CANCELADA') {
+        throw new Error('A assinatura da empresa está cancelada.');
+      }
+
+      const activeEmployeesCount = await prisma.employee.count({
+        where: {
+          companyId: user.companyId,
+          status: { not: 'INATIVO' },
+        },
+      });
+
+      if (activeEmployeesCount >= subscription.plan.maxEmployees) {
+        throw new Error(
+          `Limite do plano atingido: o plano ${subscription.plan.name} permite no máximo ${subscription.plan.maxEmployees} colaboradores cadastrados. Faça upgrade do seu plano para expandir a equipe.`
+        );
+      }
+    }
+
     const newEmployee = await prisma.employee.create({
       data: {
         companyId: user.companyId,

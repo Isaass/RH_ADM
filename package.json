@@ -8,9 +8,10 @@
     "apps/*"
   ],
   "scripts": {
-    "dev:backend": "npm --workspace=apps/backend run dev",
-    "dev:frontend": "npm --workspace=apps/frontend run dev",
-    "dev": "npm --workspace=apps/backend run dev",
+    "dev": "concurrently -k -n backend,frontend -c \"magenta.bold,cyan.bold\" \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "npm --workspace=@pontuarh/backend run dev",
+    "dev:frontend": "npm --workspace=@pontuarh/frontend run dev",
+    "start": "concurrently -k -n backend,frontend -c \"magenta.bold,cyan.bold\" \"npm --workspace=@pontuarh/backend run start\" \"npm --workspace=@pontuarh/frontend run start\"",
     "build": "npm run build --workspaces",
     "test": "npm --workspace=apps/backend run test",
     "db:setup": "npm --workspace=apps/backend run db:setup",
@@ -29,6 +30,7 @@
   "author": "Pontua RH Team",
   "license": "UNLICENSED",
   "devDependencies": {
-    "@playwright/test": "^1.64.1"
+    "@playwright/test": "^1.64.1",
+    "concurrently": "^10.0.6"
   }
 }

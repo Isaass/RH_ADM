@@ -23,6 +23,11 @@ export interface UpdateScheduleDTO extends Partial<CreateScheduleDTO> {
   active?: boolean;
 }
 
+function parseTimeToMinutes(t: string): number {
+  const [h, m] = (t || '').split(':').map(Number);
+  return (h || 0) * 60 + (m || 0);
+}
+
 export class SchedulesService {
   /**
    * Listar todas as jornadas da empresa com contagem de colaboradores associados
@@ -93,8 +98,23 @@ export class SchedulesService {
       throw new Error('Preencha os campos obrigatórios: Nome, Entrada Prevista, Saída Prevista e Intervalo.');
     }
 
-    const dailyHours = data.dailyHours !== undefined ? Number(data.dailyHours) : 8.0;
-    const weeklyHours = data.weeklyHours !== undefined ? Number(data.weeklyHours) : 44.0;
+    // Cálculo automático de consistência de jornada diária e semanal
+    let calculatedDailyHours = 8.0;
+    let calculatedWeeklyHours = 44.0;
+
+    const entryMin = parseTimeToMinutes(data.expectedEntry);
+    const exitMin = parseTimeToMinutes(data.expectedExit);
+    const breakMin = parseTimeToMinutes(data.expectedBreak);
+    const diffMin = exitMin - entryMin - breakMin;
+
+    if (diffMin > 0) {
+      calculatedDailyHours = Math.round((diffMin / 60) * 100) / 100;
+      const daysCount = (data.daysOfWeek || 'MON,TUE,WED,THU,FRI').split(',').filter(Boolean).length;
+      calculatedWeeklyHours = Math.round(((diffMin * daysCount) / 60) * 100) / 100;
+    }
+
+    const dailyHours = data.dailyHours !== undefined ? Number(data.dailyHours) : calculatedDailyHours;
+    const weeklyHours = data.weeklyHours !== undefined ? Number(data.weeklyHours) : calculatedWeeklyHours;
     const toleranceMinutes = data.toleranceMinutes !== undefined ? Number(data.toleranceMinutes) : 10;
 
     const schedule = await prisma.workSchedule.create({
@@ -159,17 +179,35 @@ export class SchedulesService {
       throw new Error('Jornada de trabalho não encontrada.');
     }
 
+    const finalEntry = data.expectedEntry !== undefined ? data.expectedEntry : existing.expectedEntry;
+    const finalExit = data.expectedExit !== undefined ? data.expectedExit : existing.expectedExit;
+    const finalBreak = data.expectedBreak !== undefined ? data.expectedBreak : existing.expectedBreak;
+    const finalDays = data.daysOfWeek !== undefined ? data.daysOfWeek : existing.daysOfWeek;
+
+    let calculatedDaily = existing.dailyHours;
+    let calculatedWeekly = existing.weeklyHours;
+
+    const diffMin = parseTimeToMinutes(finalExit) - parseTimeToMinutes(finalEntry) - parseTimeToMinutes(finalBreak);
+    if (diffMin > 0) {
+      calculatedDaily = Math.round((diffMin / 60) * 100) / 100;
+      const daysCount = (finalDays || '').split(',').filter(Boolean).length;
+      calculatedWeekly = Math.round(((diffMin * daysCount) / 60) * 100) / 100;
+    }
+
+    const dailyHours = data.dailyHours !== undefined ? Number(data.dailyHours) : calculatedDaily;
+    const weeklyHours = data.weeklyHours !== undefined ? Number(data.weeklyHours) : calculatedWeekly;
+
     const updated = await prisma.workSchedule.update({
       where: { id },
       data: {
         name: data.name !== undefined ? data.name.trim() : existing.name,
         type: data.type !== undefined ? data.type : existing.type,
-        dailyHours: data.dailyHours !== undefined ? Number(data.dailyHours) : existing.dailyHours,
-        weeklyHours: data.weeklyHours !== undefined ? Number(data.weeklyHours) : existing.weeklyHours,
-        expectedEntry: data.expectedEntry !== undefined ? data.expectedEntry : existing.expectedEntry,
-        expectedExit: data.expectedExit !== undefined ? data.expectedExit : existing.expectedExit,
-        expectedBreak: data.expectedBreak !== undefined ? data.expectedBreak : existing.expectedBreak,
-        daysOfWeek: data.daysOfWeek !== undefined ? data.daysOfWeek : existing.daysOfWeek,
+        dailyHours,
+        weeklyHours,
+        expectedEntry: finalEntry,
+        expectedExit: finalExit,
+        expectedBreak: finalBreak,
+        daysOfWeek: finalDays,
         toleranceMinutes: data.toleranceMinutes !== undefined ? Number(data.toleranceMinutes) : existing.toleranceMinutes,
         validFrom: data.validFrom !== undefined ? (data.validFrom ? new Date(data.validFrom) : null) : existing.validFrom,
         validUntil: data.validUntil !== undefined ? (data.validUntil ? new Date(data.validUntil) : null) : existing.validUntil,

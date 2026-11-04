@@ -16,10 +16,12 @@ import {
   Landmark,
   X,
   Sparkles,
+  Compass,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/Badge';
 import { Logo } from '@/components/ui/Logo';
+import { useAuth } from '@/context/auth-context';
 
 export interface AdminSidebarProps {
   isOpen: boolean;
@@ -28,8 +30,12 @@ export interface AdminSidebarProps {
 
 export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   const pathname = usePathname();
+  const { user } = useAuth();
 
-  const navItems = [
+  const isGestor = user?.role === 'GESTOR';
+  const isContador = user?.role === 'CONTADOR';
+
+  const rawGroups = [
     {
       group: 'PRINCIPAL',
       items: [
@@ -54,18 +60,35 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       ],
     },
     {
-      group: 'EXPANSÃO FUTURA',
+      group: 'DEPARTAMENTO PESSOAL',
       items: [
-        { label: 'Prévia de Folha', href: '/admin/payroll', icon: Wallet, badge: 'Fase 5' },
+        { label: 'Prévia de Folha', href: '/admin/payroll', icon: Wallet },
       ],
     },
     {
       group: 'CONFIGURAÇÕES',
       items: [
         { label: 'Dados da Empresa', href: '/admin/company', icon: Landmark },
+        { label: 'Plano & Assinatura', href: '/admin/subscription', icon: Sparkles, badge: 'SaaS' },
+        { label: 'Configuração Inicial', href: '/admin/onboarding', icon: Compass, badge: 'Guia' },
       ],
     },
   ];
+
+  const navItems = rawGroups
+    .map((g) => ({
+      ...g,
+      items: g.items.filter((item) => {
+        if (isGestor) {
+          return !['/admin/payroll', '/admin/company', '/admin/subscription', '/admin/onboarding'].includes(item.href);
+        }
+        if (isContador) {
+          return ['/admin/dashboard', '/admin/payroll', '/admin/time-tracking', '/admin/time-bank'].includes(item.href);
+        }
+        return true;
+      }),
+    }))
+    .filter((g) => g.items.length > 0);
 
   return (
     <>
@@ -146,12 +169,22 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         {/* Footer info */}
         <div className="p-4 border-t border-slate-800">
           <div className="bg-slate-800/60 rounded-xl p-3 border border-slate-700/50 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400">
-              <Sparkles className="w-4 h-4" />
+            <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400 shrink-0">
+              <Building2 className="w-4 h-4" />
             </div>
-            <div className="text-xs">
-              <p className="font-semibold text-slate-200">Fase 2: Ponto Ativo</p>
-              <p className="text-[11px] text-slate-400">REP-P / Portaria 671</p>
+            <div className="text-xs min-w-0">
+              <p className="font-semibold text-slate-200 truncate">
+                {user?.companyName || 'Pontua RH'}
+              </p>
+              <p className="text-[11px] text-slate-400">
+                {isGestor
+                  ? 'Gestor de Equipe'
+                  : isContador
+                  ? 'Contabilidade'
+                  : user?.role === 'SUPER_ADMIN'
+                  ? 'Super Admin'
+                  : 'SaaS Corporativo'}
+              </p>
             </div>
           </div>
         </div>

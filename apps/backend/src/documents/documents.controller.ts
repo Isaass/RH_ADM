@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import { authGuard, AuthenticatedRequest } from '../middlewares/auth.guard';
+import { featureGuard } from '../middlewares/feature.guard';
+import { PlanFeature } from '@pontuarh/shared';
 import { documentsService } from './documents.service';
 
 export const documentsRouter = Router();
-documentsRouter.use(authGuard);
+documentsRouter.use(authGuard, featureGuard(PlanFeature.DOCUMENTOS));
 
 /**
  * GET /api/documents

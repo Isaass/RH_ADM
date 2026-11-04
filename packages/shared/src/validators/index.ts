@@ -119,6 +119,25 @@ export function formatPhoneBR(phone?: string | null): string {
   return clean.replace(/^(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
 }
 
+/**
+ * Validação do Código de Endereçamento Postal (CEP) brasileiro (8 dígitos)
+ */
+export function isValidCEP(cep?: string | null): boolean {
+  if (!cep) return false;
+  const clean = cep.replace(/\D/g, '');
+  return clean.length === 8;
+}
+
+/**
+ * Formata CEP brasileiro para o padrão 00000-000
+ */
+export function formatCEP(cep?: string | null): string {
+  if (!cep) return '';
+  const clean = cep.replace(/\D/g, '').slice(0, 8);
+  if (clean.length <= 5) return clean;
+  return clean.replace(/^(\d{5})(\d{1,3})/, '$1-$2');
+}
+
 // ----------------------------------------------------
 // Schemas Zod de Validação
 // ----------------------------------------------------

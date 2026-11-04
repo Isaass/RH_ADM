@@ -25,8 +25,12 @@ export default function LoginPage() {
 
     try {
       const loggedUser = await login(email, password);
-      if (loggedUser.role === UserRole.COLABORADOR) {
+      if (loggedUser.role === UserRole.SUPER_ADMIN) {
+        router.push('/super-admin');
+      } else if (loggedUser.role === UserRole.COLABORADOR) {
         router.push('/portal');
+      } else if (loggedUser.role === UserRole.ADMIN_EMPRESA && (loggedUser as any).onboardingCompleted === false) {
+        router.push('/admin/onboarding');
       } else {
         router.push('/admin/dashboard');
       }
@@ -44,9 +48,9 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-slate-50 dark:bg-slate-950">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-slate-50 dark:bg-slate-950 overflow-x-hidden">
       {/* Coluna Esquerda: Apresentação da Marca SaaS */}
-      <div className="lg:w-1/2 bg-slate-900 text-white p-8 lg:p-16 flex flex-col justify-between relative overflow-hidden">
+      <div className="lg:w-1/2 bg-slate-900 text-white p-6 sm:p-8 lg:p-16 flex flex-col justify-between relative overflow-hidden">
         {/* Glow de fundo */}
         <div className="absolute -top-32 -left-32 w-96 h-96 bg-brand-primary/20 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -99,7 +103,7 @@ export default function LoginPage() {
       </div>
 
       {/* Coluna Direita: Formulário de Autenticação */}
-      <div className="lg:w-1/2 flex items-center justify-center p-6 sm:p-12">
+      <div className="lg:w-1/2 flex items-center justify-center p-4 sm:p-6 lg:p-12">
         <div className="w-full max-w-md">
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
@@ -155,7 +159,21 @@ export default function LoginPage() {
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3 text-center">
               Acesso Rápido para Avaliação (Demonstração)
             </p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => handleQuickFill('superadmin@pontuarh.com.br', 'Super@123456')}
+                className="p-2.5 rounded-lg border border-indigo-200 dark:border-indigo-800 hover:border-indigo-500 dark:hover:border-indigo-400 bg-indigo-50/60 dark:bg-indigo-950/40 text-left transition-all group col-span-1 sm:col-span-2"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-indigo-700 dark:text-indigo-300 group-hover:text-indigo-600">
+                    Super Admin (Gestão Global da Plataforma)
+                  </p>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-200 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-200 font-semibold">Fase 6.1</span>
+                </div>
+                <p className="text-[11px] text-indigo-600/90 dark:text-indigo-400/90 font-mono">superadmin@pontuarh.com.br</p>
+              </button>
+
               <button
                 type="button"
                 onClick={() => handleQuickFill('admin@pontuarh.com.br', 'Admin@123456')}

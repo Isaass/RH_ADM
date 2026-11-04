@@ -23,7 +23,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Badge } from '@/components/ui/Badge';
-import { formatCPF, formatCurrencyBRL, Employee, Department, Position, canManageEmployees } from '@pontuarh/shared';
+import { formatCPF, formatPhoneBR, formatCurrencyBRL, Employee, Department, Position, canManageEmployees } from '@pontuarh/shared';
 
 export default function EmployeeDetailPage() {
   const params = useParams();
@@ -232,8 +232,9 @@ export default function EmployeeDetailPage() {
             <Input
               label="Telefone / Celular"
               disabled={!isManager}
+              placeholder="(11) 98765-4321"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={(e) => setPhone(formatPhoneBR(e.target.value))}
             />
           </CardContent>
         </Card>

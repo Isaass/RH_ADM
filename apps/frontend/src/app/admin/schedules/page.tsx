@@ -38,10 +38,10 @@ export default function SchedulesPage() {
   const [formId, setFormId] = useState<string | null>(null);
   const [formName, setFormName] = useState('');
   const [formType, setFormType] = useState<string>(ScheduleType.FIXA);
-  const [formDailyHours, setFormDailyHours] = useState(8.0);
+  const [formDailyHours, setFormDailyHours] = useState(8.8);
   const [formWeeklyHours, setFormWeeklyHours] = useState(44.0);
   const [formExpectedEntry, setFormExpectedEntry] = useState('08:00');
-  const [formExpectedExit, setFormExpectedExit] = useState('17:00');
+  const [formExpectedExit, setFormExpectedExit] = useState('17:48');
   const [formExpectedBreak, setFormExpectedBreak] = useState('01:00');
   const [formDaysOfWeek, setFormDaysOfWeek] = useState('MON,TUE,WED,THU,FRI');
   const [formTolerance, setFormTolerance] = useState(10);
@@ -81,10 +81,10 @@ export default function SchedulesPage() {
     setFormId(null);
     setFormName('');
     setFormType(ScheduleType.FIXA);
-    setFormDailyHours(8.0);
+    setFormDailyHours(8.8);
     setFormWeeklyHours(44.0);
     setFormExpectedEntry('08:00');
-    setFormExpectedExit('17:00');
+    setFormExpectedExit('17:48');
     setFormExpectedBreak('01:00');
     setFormDaysOfWeek('MON,TUE,WED,THU,FRI');
     setFormTolerance(10);

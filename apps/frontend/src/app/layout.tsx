@@ -1,28 +1,14 @@
 import type { Metadata } from 'next';
-import { Manrope, Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
+import { Montserrat } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/context/auth-context';
 import { ThemeProvider } from '@/context/theme-context';
 
-const manrope = Manrope({
+const montserrat = Montserrat({
   subsets: ['latin'],
-  variable: '--font-manrope',
-  weight: ['600', '700', '800'],
+  variable: '--font-montserrat',
   display: 'swap',
-});
-
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  variable: '--font-sans',
-  weight: ['400', '500', '600', '700'],
-  display: 'swap',
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ['latin'],
-  variable: '--font-mono',
-  weight: ['400', '500', '600', '700'],
-  display: 'swap',
+  weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
 });
 
 export const metadata: Metadata = {
@@ -38,10 +24,10 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
+      className={montserrat.variable}
       suppressHydrationWarning
-      className={`${manrope.variable} ${plusJakartaSans.variable} ${jetbrainsMono.variable}`}
     >
-      <body className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans antialiased">
+      <body className={`${montserrat.className} font-sans min-h-screen bg-[#F8FAFC] dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased`}>
         <ThemeProvider>
           <AuthProvider>
             {children}
@@ -51,4 +37,3 @@ export default function RootLayout({
     </html>
   );
 }
-

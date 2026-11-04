@@ -1,12 +1,13 @@
 import { Router, Response } from 'express';
 import { authGuard, rolesGuard, AuthenticatedRequest } from '../middlewares/auth.guard';
+import { featureGuard } from '../middlewares/feature.guard';
 import { timeBankService } from './time-bank.service';
-import { UserRole, canManageTimeBank, canApproveCompensations } from '@pontuarh/shared';
+import { UserRole, PlanFeature, canManageTimeBank, canApproveCompensations } from '@pontuarh/shared';
 
 export const timeBankRouter = Router();
 
-// Todas as rotas de banco de horas exigem autenticação
-timeBankRouter.use(authGuard);
+// Todas as rotas de banco de horas exigem autenticação e plano com suporte a banco de horas
+timeBankRouter.use(authGuard, featureGuard(PlanFeature.BANCO_HORAS));
 
 // ----------------------------------------------------------------------------
 // 1. POLÍTICAS DE BANCO DE HORAS

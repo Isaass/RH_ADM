@@ -1,15 +1,16 @@
 import { Router } from 'express';
 import { authGuard, AuthenticatedRequest } from '../middlewares/auth.guard';
+import { featureGuard } from '../middlewares/feature.guard';
 import { vacationsService } from './vacations.service';
 import { vacationsCalculationService } from './vacations-calculation.service';
-import { canViewSalaries, UserRole } from '@pontuarh/shared';
+import { canViewSalaries, UserRole, PlanFeature } from '@pontuarh/shared';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 export const vacationsRouter = Router();
 
-// Aplica autenticação obrigatória em todas as rotas
-vacationsRouter.use(authGuard);
+// Aplica autenticação obrigatória e checagem de plano em todas as rotas
+vacationsRouter.use(authGuard, featureGuard(PlanFeature.FERIAS));
 
 /**
  * GET /api/vacations/overview

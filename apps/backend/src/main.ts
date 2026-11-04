@@ -16,6 +16,9 @@ import { vacationsRouter } from './vacations/vacations.controller';
 import { leavesRouter } from './leaves/leaves.controller';
 import { medicalCertificatesRouter } from './medical-certificates/medical-certificates.controller';
 import { documentsRouter } from './documents/documents.controller';
+import { payrollRouter } from './payroll/payroll.controller';
+import { platformRouter } from './platform/platform.controller';
+import { onboardingRouter } from './onboarding/onboarding.controller';
 
 dotenv.config();
 
@@ -36,17 +39,20 @@ app.get('/api/health', (req, res) => {
     status: 'ONLINE',
     service: 'Pontua RH API',
     timestamp: new Date().toISOString(),
-    version: '4.0.0-fase4',
+    version: '6.2.0-fase6.2',
   });
 });
 
 // Registro de Módulos da API
 app.use('/api/auth', authRouter);
+app.use('/api/platform', platformRouter);
 app.use('/api/employees', employeesRouter);
 app.use('/api/departments', departmentsRouter);
 app.use('/api/positions', positionsRouter);
 app.use('/api/schedules', schedulesRouter);
 app.use('/api/companies', companiesRouter);
+app.use('/api/company', companiesRouter);
+app.use('/api/onboarding', onboardingRouter);
 app.use('/api/dashboard', dashboardRouter);
 app.use('/api/time-tracking', timeTrackingRouter);
 app.use('/api/timesheet', timesheetRouter);
@@ -56,6 +62,7 @@ app.use('/api/vacations', vacationsRouter);
 app.use('/api/leaves', leavesRouter);
 app.use('/api/medical-certificates', medicalCertificatesRouter);
 app.use('/api/documents', documentsRouter);
+app.use('/api/payroll', payrollRouter);
 
 // Tratamento de rotas inexistentes
 app.use((req, res) => {

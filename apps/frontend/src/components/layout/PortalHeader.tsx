@@ -1,83 +1,70 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Clock, LogOut, User, LayoutDashboard, FileText, CheckSquare, ChevronRight, Scale, Palmtree } from 'lucide-react';
+import { Menu, LogOut, Building, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { Badge } from '@/components/ui/Badge';
-import { cn } from '@/lib/utils';
 
-import { Logo } from '@/components/ui/Logo';
+export interface PortalHeaderProps {
+  onToggleSidebar: () => void;
+}
 
-export function PortalHeader() {
+export function PortalHeader({ onToggleSidebar }: PortalHeaderProps) {
   const { user, logout } = useAuth();
-  const pathname = usePathname();
-
-  const links = [
-    { label: 'Meu Painel', href: '/portal', icon: LayoutDashboard },
-    { label: 'Espelho de Ponto', href: '/portal/timesheet', icon: FileText },
-    { label: 'Solicitar Ajuste', href: '/portal/adjustments', icon: CheckSquare },
-    { label: 'Banco de Horas', href: '/portal/time-bank', icon: Scale },
-    { label: 'Férias & Afastamentos', href: '/portal/vacations', icon: Palmtree },
-    { label: 'Meu Perfil', href: '/portal/profile', icon: User },
-  ];
 
   return (
-    <header className="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-6">
-          <Link href="/portal" className="flex items-center">
-            <Logo variant="auto" subtitle="Colaborador" size="sm" />
-          </Link>
+    <header className="sticky top-0 z-30 h-16 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 flex items-center justify-between">
+      {/* Esquerda: Botão Menu Mobile & Identificação */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onToggleSidebar}
+          className="lg:hidden p-2 rounded-xl text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          aria-label="Abrir menu lateral"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
 
-          <nav className="hidden sm:flex items-center gap-1">
-            {links.map((link) => {
-              const isActive = pathname === link.href;
-              const Icon = link.icon;
-              return (
-                <Link
-                  key={link.label}
-                  href={link.href}
-                  className={cn(
-                    'flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
-                    isActive
-                      ? 'bg-blue-50 dark:bg-blue-950/50 text-brand-primary dark:text-blue-400'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
-                  )}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span>{link.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-bold text-slate-800 dark:text-slate-200 hidden sm:inline">
+            Portal do Colaborador
+          </span>
+          {user?.companyName && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-[11px] font-medium text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+              <Building className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+              <span className="truncate max-w-[140px] sm:max-w-xs">{user.companyName}</span>
+            </div>
+          )}
         </div>
+      </div>
 
+      {/* Direita: Tema, Perfil do Usuário e Logout */}
+      <div className="flex items-center gap-3 sm:gap-4">
+        <ThemeToggle />
+
+        <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block" />
+
+        {/* Card do Usuário */}
         <div className="flex items-center gap-3">
-          <ThemeToggle />
-
-          <div className="h-5 w-px bg-slate-200 dark:bg-slate-800" />
-
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-emerald-600 text-white font-semibold flex items-center justify-center text-xs shadow-sm">
-              {user?.name ? user.name.charAt(0).toUpperCase() : 'C'}
-            </div>
-            <div className="hidden sm:block text-left">
-              <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 leading-tight">
-                {user?.name || 'Colaborador'}
-              </p>
-              <p className="text-[10px] text-slate-400">{user?.email}</p>
-            </div>
-            <button
-              onClick={logout}
-              title="Sair"
-              className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
+          <div className="text-right hidden sm:block">
+            <p className="text-xs font-bold text-slate-900 dark:text-slate-100 leading-tight">
+              {user?.name || 'Colaborador'}
+            </p>
+            <p className="text-[10px] text-slate-400">{user?.email}</p>
           </div>
+
+          <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-bold flex items-center justify-center text-sm shadow-sm ring-2 ring-white dark:ring-slate-900">
+            {user?.name ? user.name.charAt(0).toUpperCase() : 'C'}
+          </div>
+
+          <button
+            onClick={logout}
+            title="Sair do portal"
+            className="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+            aria-label="Sair do sistema"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </header>

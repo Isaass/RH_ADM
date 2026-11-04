@@ -12,7 +12,11 @@ import { validateAttachment } from '../adjustments/adjustments.service';
 const prisma = new PrismaClient();
 
 // Diretório de armazenamento seguro fora da raiz pública
-const STORAGE_ROOT = path.join(process.cwd(), 'storage', 'documents');
+const STORAGE_ROOT = process.env.STORAGE_PATH || (
+  process.cwd().endsWith(path.join('apps', 'backend'))
+    ? path.join(process.cwd(), 'storage', 'documents')
+    : path.join(process.cwd(), 'apps', 'backend', 'storage', 'documents')
+);
 
 export interface UploadDocumentDTO {
   employeeId?: string;

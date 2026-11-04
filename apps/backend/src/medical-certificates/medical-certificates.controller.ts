@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import { authGuard, AuthenticatedRequest } from '../middlewares/auth.guard';
+import { featureGuard } from '../middlewares/feature.guard';
+import { PlanFeature } from '@pontuarh/shared';
 import { medicalCertificatesService } from './medical-certificates.service';
 
 export const medicalCertificatesRouter = Router();
-medicalCertificatesRouter.use(authGuard);
+medicalCertificatesRouter.use(authGuard, featureGuard(PlanFeature.FERIAS));
 
 /**
  * GET /api/medical-certificates

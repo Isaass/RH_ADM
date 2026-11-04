@@ -14,6 +14,8 @@ export default function HomePage() {
     if (!isLoading) {
       if (!user) {
         router.replace('/login');
+      } else if (user.role === UserRole.SUPER_ADMIN) {
+        router.replace('/super-admin');
       } else if (user.role === UserRole.COLABORADOR) {
         router.replace('/portal');
       } else {

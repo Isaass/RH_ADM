@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import { authGuard, AuthenticatedRequest } from '../middlewares/auth.guard';
+import { featureGuard } from '../middlewares/feature.guard';
+import { PlanFeature } from '@pontuarh/shared';
 import { leavesService } from './leaves.service';
 
 export const leavesRouter = Router();
-leavesRouter.use(authGuard);
+leavesRouter.use(authGuard, featureGuard(PlanFeature.FERIAS));
 
 /**
  * GET /api/leaves

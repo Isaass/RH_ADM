@@ -1,10 +1,11 @@
 import { Router, Response } from 'express';
 import { authGuard, rolesGuard, AuthenticatedRequest } from '../middlewares/auth.guard';
+import { featureGuard } from '../middlewares/feature.guard';
 import { adjustmentsService } from './adjustments.service';
-import { UserRole } from '@pontuarh/shared';
+import { UserRole, PlanFeature } from '@pontuarh/shared';
 
 export const adjustmentsRouter = Router();
-adjustmentsRouter.use(authGuard);
+adjustmentsRouter.use(authGuard, featureGuard(PlanFeature.AJUSTES));
 
 /**
  * Colaborador: Criar solicitação de ajuste ou justificativa

@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
-import { isValidCPF, formatCPF, Department, Position } from '@pontuarh/shared';
+import { isValidCPF, formatCPF, formatPhoneBR, Department, Position } from '@pontuarh/shared';
 
 export default function NewEmployeePage() {
   const router = useRouter();
@@ -159,7 +159,7 @@ export default function NewEmployeePage() {
               label="Telefone / Celular"
               placeholder="(11) 98765-4321"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={(e) => setPhone(formatPhoneBR(e.target.value))}
             />
 
             <Input

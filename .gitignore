@@ -10,3 +10,9 @@ build
 *.log
 coverage
 .turbo
+*.tsbuildinfo
+playwright-report
+test-results
+storage
+apps/backend/storage/documents/*
+!apps/backend/storage/documents/.gitkeep

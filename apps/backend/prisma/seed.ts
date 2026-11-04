@@ -12,7 +12,18 @@ async function main() {
   console.log('🌱 Iniciando seed do banco de dados Pontua RH...');
 
   // 1. Limpeza em cascata para re-seed seguro
+  await prisma.subscriptionHistory.deleteMany({});
+  await prisma.subscription.deleteMany({});
+  await prisma.plan.deleteMany({});
   await prisma.auditLog.deleteMany({});
+  await prisma.payrollItem.deleteMany({});
+  await prisma.payrollEmployeeSummary.deleteMany({});
+  await prisma.payrollCompetence.deleteMany({});
+  await prisma.employeeDocument.deleteMany({});
+  await prisma.medicalCertificate.deleteMany({});
+  await prisma.employeeLeave.deleteMany({});
+  await prisma.vacationRequest.deleteMany({});
+  await prisma.vacationPeriod.deleteMany({});
   await prisma.timeBankCompensationRequest.deleteMany({});
   await prisma.timeBankTransaction.deleteMany({});
   await prisma.timeAdjustmentRequest.deleteMany({});
@@ -25,6 +36,53 @@ async function main() {
   await prisma.user.deleteMany({});
   await prisma.company.deleteMany({});
 
+  // 1.1 Criação dos Planos SaaS Padrão (Fase 6.2)
+  const planBasico = await prisma.plan.create({
+    data: {
+      name: 'Plano Básico CLT',
+      code: 'BASICO',
+      description: 'Ideal para pequenas empresas com até 10 colaboradores e controle de ponto simples.',
+      monthlyPrice: 89.90,
+      annualPrice: 899.00,
+      maxEmployees: 10,
+      maxUsers: 2,
+      maxAdmins: 1,
+      features: ['DASHBOARD', 'COLABORADORES', 'PONTO_ELETRONICO', 'ESPELHO_PONTO', 'AJUSTES'],
+      active: true,
+    },
+  });
+
+  const planPro = await prisma.plan.create({
+    data: {
+      name: 'Plano Profissional RH',
+      code: 'PRO',
+      description: 'Gestão completa com banco de horas, férias, documentos e relatórios analíticos.',
+      monthlyPrice: 199.90,
+      annualPrice: 1999.00,
+      maxEmployees: 50,
+      maxUsers: 10,
+      maxAdmins: 3,
+      features: ['DASHBOARD', 'COLABORADORES', 'PONTO_ELETRONICO', 'ESPELHO_PONTO', 'AJUSTES', 'BANCO_HORAS', 'FERIAS', 'DOCUMENTOS', 'RELATORIOS'],
+      active: true,
+    },
+  });
+
+  const planEnterprise = await prisma.plan.create({
+    data: {
+      name: 'Plano Corporativo Completo',
+      code: 'ENTERPRISE',
+      description: 'Todos os módulos operacionais liberados, incluindo prévia de folha de pagamento e alta escala.',
+      monthlyPrice: 499.90,
+      annualPrice: 4999.00,
+      maxEmployees: 500,
+      maxUsers: 50,
+      maxAdmins: 10,
+      features: ['DASHBOARD', 'COLABORADORES', 'PONTO_ELETRONICO', 'ESPELHO_PONTO', 'AJUSTES', 'BANCO_HORAS', 'FERIAS', 'DOCUMENTOS', 'FOLHA_PAGAMENTO', 'RELATORIOS'],
+      active: true,
+    },
+  });
+  console.log(`✅ Planos SaaS criados: Básico, Profissional e Corporativo.`);
+
   // 2. Criação da Empresa Demo
   const company = await prisma.company.create({
     data: {
@@ -34,9 +92,43 @@ async function main() {
       email: 'contato@pontuarh.com.br',
       phone: '(11) 3456-7890',
       active: true,
+      onboardingCompleted: true,
+      onboardingStep: 5,
     },
   });
   console.log(`✅ Empresa criada: ${company.name} (${company.id})`);
+
+  // 2.1 Assinatura Inicial da Empresa Demo (Fase 6.2)
+  const subscription = await prisma.subscription.create({
+    data: {
+      companyId: company.id,
+      planId: planEnterprise.id,
+      periodicity: 'MENSAL',
+      status: 'ATIVA',
+      price: planEnterprise.monthlyPrice,
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 ano vigente
+      notes: 'Assinatura corporativa padrão inicial provisionada no seed.',
+    },
+  });
+
+  await prisma.subscriptionHistory.create({
+    data: {
+      subscriptionId: subscription.id,
+      companyId: company.id,
+      planId: planEnterprise.id,
+      planName: planEnterprise.name,
+      planCode: planEnterprise.code,
+      action: 'CRIACAO',
+      newStatus: 'ATIVA',
+      price: planEnterprise.monthlyPrice,
+      periodicity: 'MENSAL',
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+      reason: 'Ativação inicial do plano corporativo completo.',
+    },
+  });
+  console.log(`✅ Assinatura vinculada à empresa: Plano ${planEnterprise.name} (${subscription.status})`);
 
   // 3. Departamentos
   const depRH = await prisma.department.create({
@@ -99,6 +191,7 @@ async function main() {
 
   // 6. Hashes de senhas padronizadas
   const salt = await bcrypt.genSalt(10);
+  const hashSuper = await bcrypt.hash('Super@123456', salt);
   const hashAdmin = await bcrypt.hash('Admin@123456', salt);
   const hashRh = await bcrypt.hash('Rh@123456', salt);
   const hashGestor = await bcrypt.hash('Gestor@123456', salt);
@@ -106,6 +199,18 @@ async function main() {
   const hashContador = await bcrypt.hash('Contador@123456', salt);
 
   // 7. Usuários do Sistema
+  // Super Admin da Plataforma (sem vínculo obrigatório a uma empresa)
+  const userSuperAdmin = await prisma.user.create({
+    data: {
+      name: 'Super Administrador Pontua RH',
+      email: 'superadmin@pontuarh.com.br',
+      passwordHash: hashSuper,
+      role: 'SUPER_ADMIN',
+      active: true,
+    },
+  });
+  console.log(`✅ Super Admin criado: ${userSuperAdmin.email} (${userSuperAdmin.id})`);
+
   const userAdmin = await prisma.user.create({
     data: {
       companyId: company.id,

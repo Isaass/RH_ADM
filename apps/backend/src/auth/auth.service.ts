@@ -8,6 +8,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'pontuarh-jwt-super-secret-key-prod
 const JWT_EXPIRES_IN = '8h';
 
 const DEMO_EMAILS = [
+  'superadmin@pontuarh.com.br',
   'admin@pontuarh.com.br',
   'rh@pontuarh.com.br',
   'gestor@pontuarh.com.br',
@@ -46,6 +47,13 @@ export class AuthService {
       throw new Error('Esta conta de usuário foi desativada pelo administrador.');
     }
 
+    // Bloqueio de acesso para colaboradores de empresas suspensas
+    if (user.companyId && user.role !== UserRole.SUPER_ADMIN) {
+      if (!user.company?.active || user.company?.status === 'SUSPENSA') {
+        throw new Error('Acesso negado: A empresa vinculada a esta conta está suspensa. Entre em contato com a administração da plataforma.');
+      }
+    }
+
     const isPasswordValid = await bcrypt.compare(passwordPlain, user.passwordHash);
     if (!isPasswordValid) {
       throw new Error('E-mail ou senha incorretos.');
@@ -82,6 +90,8 @@ export class AuthService {
       user: {
         ...payload,
         companyName: user.company?.tradeName || user.company?.name || null,
+        onboardingCompleted: user.company?.onboardingCompleted ?? true,
+        onboardingStep: user.company?.onboardingStep ?? 1,
       },
     };
   }
@@ -109,6 +119,12 @@ export class AuthService {
 
     if (!user || !user.active) {
       throw new Error('Usuário não encontrado ou inativo.');
+    }
+
+    if (user.companyId && user.role !== UserRole.SUPER_ADMIN) {
+      if (!user.company?.active || user.company?.status === 'SUSPENSA') {
+        throw new Error('Acesso negado: A empresa vinculada a esta conta está suspensa.');
+      }
     }
 
     return {

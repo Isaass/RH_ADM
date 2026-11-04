@@ -18,6 +18,7 @@ import {
   Palmtree,
   Scale,
   FileCheck,
+  Sparkles,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/auth-context';
@@ -25,7 +26,7 @@ import { StatCard } from '@/components/ui/StatCard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { formatCurrencyBRL } from '@pontuarh/shared';
+import { formatCurrencyBRL, OnboardingStatus } from '@pontuarh/shared';
 
 interface DashboardStats {
   totalEmployees: number;
@@ -49,6 +50,7 @@ export default function AdminDashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [pendingAdjustmentsCount, setPendingAdjustmentsCount] = useState<number>(0);
   const [vacationOverview, setVacationOverview] = useState<any | null>(null);
+  const [onboardingStatus, setOnboardingStatus] = useState<OnboardingStatus | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -56,11 +58,13 @@ export default function AdminDashboardPage() {
       api.get<DashboardStats>('/dashboard/stats'),
       api.get<any[]>('/adjustments?status=PENDENTE'),
       api.get<any>('/vacations/overview'),
+      api.get<OnboardingStatus>('/onboarding/status'),
     ])
-      .then(([statsRes, adjRes, vacRes]) => {
+      .then(([statsRes, adjRes, vacRes, onbRes]) => {
         if (statsRes.status === 'fulfilled') setStats(statsRes.value);
         if (adjRes.status === 'fulfilled') setPendingAdjustmentsCount(adjRes.value?.length || 0);
         if (vacRes.status === 'fulfilled') setVacationOverview(vacRes.value);
+        if (onbRes.status === 'fulfilled') setOnboardingStatus(onbRes.value);
       })
       .catch((err) => console.error('Erro ao carregar métricas:', err))
       .finally(() => setLoading(false));
@@ -92,6 +96,28 @@ export default function AdminDashboardPage() {
           </Link>
         </div>
       </div>
+
+      {/* Banner de Onboarding Pendente */}
+      {onboardingStatus && !onboardingStatus.onboardingCompleted && (
+        <div className="p-4 rounded-xl bg-gradient-to-r from-brand-primary/10 via-purple-500/10 to-transparent border border-brand-primary/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <Sparkles className="w-5 h-5 text-brand-primary shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                Configuração Inicial da Empresa em Andamento
+              </p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                Sua organização está na etapa {onboardingStatus.onboardingStep} de 5 do onboarding. Conclua os cadastros essenciais para operar com máxima conformidade.
+              </p>
+            </div>
+          </div>
+          <Link href="/admin/onboarding">
+            <Button size="sm" variant="primary" className="bg-brand-primary text-xs shrink-0">
+              Continuar Onboarding <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+            </Button>
+          </Link>
+        </div>
+      )}
 
       {/* Resumo Operacional de Gestão (Conforme UI/UX Skill) */}
       <div>

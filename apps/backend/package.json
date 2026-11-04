@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "tsc",
-    "start": "ts-node src/main.ts",
+    "start": "tsx src/main.ts",
     "dev": "tsx watch src/main.ts",
     "db:setup": "prisma migrate deploy && tsx prisma/seed.ts",
     "db:migrate:dev": "prisma migrate dev",

@@ -24,8 +24,27 @@ export interface Company {
   email?: string | null;
   phone?: string | null;
   active: boolean;
+  status: 'ATIVA' | 'SUSPENSA';
+  street?: string | null;
+  number?: string | null;
+  complement?: string | null;
+  neighborhood?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zipCode?: string | null;
+  suspensionReason?: string | null;
+  suspendedAt?: string | null;
+  suspendedById?: string | null;
+  onboardingCompleted?: boolean;
+  onboardingStep?: number;
   createdAt: string;
   updatedAt: string;
+  _count?: {
+    employees?: number;
+    users?: number;
+    departments?: number;
+    positions?: number;
+  };
 }
 
 export interface Department {
@@ -458,4 +477,358 @@ export function canManageDocuments(role: UserRole): boolean {
 export function isAdministrativeRole(role: UserRole): boolean {
   return [UserRole.SUPER_ADMIN, UserRole.ADMIN_EMPRESA, UserRole.RH, UserRole.GESTOR].includes(role);
 }
+
+export function canManagePayroll(role: UserRole): boolean {
+  return [UserRole.SUPER_ADMIN, UserRole.ADMIN_EMPRESA, UserRole.RH, UserRole.CONTADOR].includes(role);
+}
+
+// ----------------------------------------------------
+// FASE 5: Gestão Financeira e Prévia de Folha
+// ----------------------------------------------------
+
+export interface PayrollItem {
+  id: string;
+  summaryId: string;
+  companyId: string;
+  employeeId: string;
+  type: 'PROVENTO' | 'DESCONTO';
+  category: string;
+  code: string;
+  name: string;
+  reference?: string | null;
+  amount: number;
+  isManual: boolean;
+  createdAt: string;
+}
+
+export interface PayrollEmployeeSummary {
+  id: string;
+  payrollCompetenceId: string;
+  companyId: string;
+  employeeId: string;
+  employee?: {
+    id: string;
+    fullName: string;
+    cpf: string;
+    registrationNumber?: string | null;
+    department?: { id: string; name: string } | null;
+    position?: { id: string; title: string } | null;
+  };
+  baseSalary: number;
+  totalEarnings: number;
+  totalDeductions: number;
+  netSalary: number;
+  overtimeHours: number;
+  overtimeAmount: number;
+  timeBankAmount: number;
+  vacationAmount: number;
+  otherEarnings: number;
+  otherDeductions: number;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  items?: PayrollItem[];
+}
+
+export interface PayrollCompetence {
+  id: string;
+  companyId: string;
+  competence: string; // Formato 'YYYY-MM'
+  status: 'ABERTA' | 'FECHADA';
+  totalEmployees: number;
+  totalGross: number;
+  totalDeductions: number;
+  totalNet: number;
+  closedAt?: string | null;
+  closedById?: string | null;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  summaries?: PayrollEmployeeSummary[];
+}
+
+export interface CreatePayrollItemDTO {
+  employeeId: string;
+  type: 'PROVENTO' | 'DESCONTO';
+  category?: string;
+  code?: string;
+  name: string;
+  reference?: string;
+  amount: number;
+}
+
+// ----------------------------------------------------
+// FASE 6.1: Super Admin e Gestão de Empresas
+// ----------------------------------------------------
+
+export function isSuperAdmin(role: UserRole): boolean {
+  return role === UserRole.SUPER_ADMIN;
+}
+
+export interface PlatformMetrics {
+  totalCompanies: number;
+  activeCompanies: number;
+  suspendedCompanies: number;
+  totalEmployees: number;
+  totalUsers: number;
+}
+
+export interface CreateCompanyDTO {
+  name: string;
+  tradeName?: string;
+  cnpj: string;
+  email?: string;
+  phone?: string;
+  street?: string;
+  number?: string;
+  complement?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  initialAdmin?: {
+    name: string;
+    email: string;
+    password: string;
+  };
+}
+
+export interface UpdateCompanyDTO {
+  name?: string;
+  tradeName?: string;
+  cnpj?: string;
+  email?: string;
+  phone?: string;
+  street?: string;
+  number?: string;
+  complement?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+}
+
+export interface SuspendCompanyDTO {
+  reason: string;
+}
+
+export interface CreateCompanyAdminDTO {
+  name: string;
+  email: string;
+  password: string;
+}
+
+export interface CompanyListResponse {
+  data: Company[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+// ----------------------------------------------------
+// FASE 6.2 — Gestão de Planos e Assinaturas
+// ----------------------------------------------------
+
+export interface Plan {
+  id: string;
+  name: string;
+  code: string;
+  description?: string | null;
+  monthlyPrice: number;
+  annualPrice?: number | null;
+  maxEmployees: number;
+  maxUsers: number;
+  maxAdmins: number;
+  features: string[]; // PlanFeature[]
+  active: boolean;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+  _count?: {
+    subscriptions?: number;
+  };
+}
+
+export interface Subscription {
+  id: string;
+  companyId: string;
+  company?: Partial<Company>;
+  planId: string;
+  plan?: Plan;
+  periodicity: string; // MENSAL, ANUAL
+  startDate: string | Date;
+  endDate?: string | Date | null;
+  status: string; // EM_TESTE, ATIVA, EXPIRADA, CANCELADA
+  price: number;
+  notes?: string | null;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+}
+
+export interface SubscriptionHistory {
+  id: string;
+  subscriptionId?: string | null;
+  companyId: string;
+  planId: string;
+  planName: string;
+  planCode: string;
+  action: string;
+  previousStatus?: string | null;
+  newStatus: string;
+  price: number;
+  periodicity: string;
+  startDate: string | Date;
+  endDate?: string | Date | null;
+  performedById?: string | null;
+  performedByName?: string | null;
+  reason?: string | null;
+  createdAt: string | Date;
+}
+
+export interface CommercialMetrics {
+  totalSubscriptions: number;
+  activeSubscriptions: number;
+  trialSubscriptions: number;
+  expiredSubscriptions: number;
+  cancelledSubscriptions: number;
+  estimatedMRR: number; // Receita Mensal Recorrente estimada em R$
+  companiesPerPlan: Array<{
+    planId: string;
+    planName: string;
+    planCode: string;
+    count: number;
+  }>;
+}
+
+export interface CompanyUsage {
+  plan: Plan;
+  subscription: Subscription;
+  currentUsage: {
+    employees: number;
+    maxEmployees: number;
+    employeesPercentage: number;
+    users: number;
+    maxUsers: number;
+    usersPercentage: number;
+    admins: number;
+    maxAdmins: number;
+    adminsPercentage: number;
+  };
+  features: Record<string, boolean>;
+  isExpired: boolean;
+  isTrial: boolean;
+  daysRemaining?: number | null;
+}
+
+export interface CreatePlanDTO {
+  name: string;
+  code: string;
+  description?: string;
+  monthlyPrice: number;
+  annualPrice?: number;
+  maxEmployees: number;
+  maxUsers: number;
+  maxAdmins: number;
+  features: string[];
+  active?: boolean;
+}
+
+export interface UpdatePlanDTO {
+  name?: string;
+  code?: string;
+  description?: string;
+  monthlyPrice?: number;
+  annualPrice?: number;
+  maxEmployees?: number;
+  maxUsers?: number;
+  maxAdmins?: number;
+  features?: string[];
+  active?: boolean;
+}
+
+export interface AssignSubscriptionDTO {
+  planId: string;
+  periodicity: string; // MENSAL, ANUAL
+  status?: string; // EM_TESTE, ATIVA
+  price?: number;
+  startDate?: string;
+  endDate?: string;
+  notes?: string;
+  trialDays?: number;
+}
+
+export interface ChangeSubscriptionPlanDTO {
+  newPlanId: string;
+  periodicity?: string;
+  price?: number;
+  reason?: string;
+}
+
+export interface RenewSubscriptionDTO {
+  monthsToAdd?: number;
+  notes?: string;
+}
+
+export interface CancelSubscriptionDTO {
+  reason: string;
+}
+
+// ----------------------------------------------------
+// FASE 6.3: Onboarding e Configuração Inicial de Empresas
+// ----------------------------------------------------
+
+export interface OnboardingStatus {
+  companyId: string;
+  onboardingCompleted: boolean;
+  onboardingStep: number;
+  company: {
+    name: string;
+    tradeName?: string | null;
+    cnpj: string;
+    email?: string | null;
+    phone?: string | null;
+    street?: string | null;
+    number?: string | null;
+    complement?: string | null;
+    neighborhood?: string | null;
+    city?: string | null;
+    state?: string | null;
+    zipCode?: string | null;
+  };
+  counts: {
+    departments: number;
+    positions: number;
+    workSchedules: number;
+    employees: number;
+  };
+  subscription?: {
+    planName: string;
+    planCode: string;
+    status: string;
+    maxEmployees: number;
+    maxUsers: number;
+    maxAdmins: number;
+    isExpired: boolean;
+    isTrial: boolean;
+  } | null;
+  canComplete: boolean;
+}
+
+export interface UpdateOnboardingCompanyDTO {
+  tradeName?: string;
+  email?: string;
+  phone?: string;
+  street?: string;
+  number?: string;
+  complement?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+}
+
+export interface UpdateOnboardingStepDTO {
+  step: number;
+}
+
 

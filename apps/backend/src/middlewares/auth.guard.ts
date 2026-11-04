@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import * as jwt from 'jsonwebtoken';
 import { UserRole } from '@pontuarh/shared';
+import { prisma } from '../prisma/prisma.service';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'pontuarh-jwt-super-secret-key-production-ready';
 
@@ -17,7 +18,7 @@ export interface AuthenticatedRequest extends Request {
   user?: AuthenticatedUser;
 }
 
-export function authGuard(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+export async function authGuard(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -32,6 +33,24 @@ export function authGuard(req: AuthenticatedRequest, res: Response, next: NextFu
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as AuthenticatedUser;
     req.user = decoded;
+
+    // Verificação de suspensão em tempo real:
+    // A suspensão de uma empresa tem efeito imediato sobre novas requisições, mesmo com JWT ativo
+    if (decoded.role !== UserRole.SUPER_ADMIN && decoded.companyId) {
+      const company = await prisma.company.findUnique({
+        where: { id: decoded.companyId },
+        select: { active: true, status: true },
+      });
+
+      if (!company || !company.active || company.status === 'SUSPENSA') {
+        return res.status(403).json({
+          error: 'Empresa suspensa',
+          message: 'O acesso desta empresa aos módulos operacionais foi suspenso pela administração da plataforma.',
+          code: 'COMPANY_SUSPENDED',
+        });
+      }
+    }
+
     next();
   } catch (error) {
     return res.status(401).json({

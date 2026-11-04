@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Building2, Briefcase, Plus, Loader2, Check } from 'lucide-react';
+import { Building2, Briefcase, Plus, Loader2, Check, AlertCircle } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/auth-context';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -25,9 +25,13 @@ export default function DepartmentsAndPositionsPage() {
   // Forms
   const [newDeptName, setNewDeptName] = useState('');
   const [newDeptCode, setNewDeptCode] = useState('');
+  const [deptError, setDeptError] = useState<string | null>(null);
+
   const [newPosTitle, setNewPosTitle] = useState('');
   const [newPosCbo, setNewPosCbo] = useState('');
   const [newPosDesc, setNewPosDesc] = useState('');
+  const [posError, setPosError] = useState<string | null>(null);
+
   const [modalLoading, setModalLoading] = useState(false);
 
   const fetchData = async () => {
@@ -52,6 +56,7 @@ export default function DepartmentsAndPositionsPage() {
 
   const handleCreateDept = async (e: React.FormEvent) => {
     e.preventDefault();
+    setDeptError(null);
     setModalLoading(true);
     try {
       await api.post('/departments', { name: newDeptName, code: newDeptCode });
@@ -60,7 +65,7 @@ export default function DepartmentsAndPositionsPage() {
       setDeptModalOpen(false);
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Erro ao criar departamento.');
+      setDeptError(err.message || 'Erro ao cadastrar departamento. Verifique se o nome já não está em uso.');
     } finally {
       setModalLoading(false);
     }
@@ -68,6 +73,7 @@ export default function DepartmentsAndPositionsPage() {
 
   const handleCreatePosition = async (e: React.FormEvent) => {
     e.preventDefault();
+    setPosError(null);
     setModalLoading(true);
     try {
       await api.post('/positions', {
@@ -81,7 +87,7 @@ export default function DepartmentsAndPositionsPage() {
       setPosModalOpen(false);
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Erro ao criar cargo.');
+      setPosError(err.message || 'Erro ao cadastrar cargo. Verifique se o título já não está em uso.');
     } finally {
       setModalLoading(false);
     }
@@ -201,11 +207,20 @@ export default function DepartmentsAndPositionsPage() {
       {/* Modal Criar Departamento */}
       <Modal
         isOpen={deptModalOpen}
-        onClose={() => setDeptModalOpen(false)}
+        onClose={() => {
+          setDeptError(null);
+          setDeptModalOpen(false);
+        }}
         title="Cadastrar Novo Departamento"
         description="Insira os dados da nova divisão corporativa."
       >
         <form onSubmit={handleCreateDept} className="space-y-4">
+          {deptError && (
+            <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{deptError}</span>
+            </div>
+          )}
           <Input
             label="Nome do Departamento"
             required
@@ -233,11 +248,20 @@ export default function DepartmentsAndPositionsPage() {
       {/* Modal Criar Cargo */}
       <Modal
         isOpen={posModalOpen}
-        onClose={() => setPosModalOpen(false)}
+        onClose={() => {
+          setPosError(null);
+          setPosModalOpen(false);
+        }}
         title="Cadastrar Novo Cargo"
         description="Defina o título e a classificação CBO."
       >
         <form onSubmit={handleCreatePosition} className="space-y-4">
+          {posError && (
+            <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{posError}</span>
+            </div>
+          )}
           <Input
             label="Título do Cargo"
             required

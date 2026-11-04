@@ -29,11 +29,25 @@ positionsRouter.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { title, cboCode, description } = req.body;
-      if (!title) return res.status(400).json({ error: 'Título do cargo é obrigatório.' });
+      if (!title || !title.trim()) return res.status(400).json({ error: 'Título do cargo é obrigatório.' });
+
+      const companyId = req.user!.companyId;
+      if (!companyId) return res.status(400).json({ error: 'Usuário sem empresa vinculada.' });
+
+      const existing = await prisma.position.findFirst({
+        where: {
+          companyId,
+          title: { equals: title.trim(), mode: 'insensitive' },
+        },
+      });
+
+      if (existing) {
+        return res.status(400).json({ error: `Já existe um cargo cadastrado com o título "${title.trim()}".` });
+      }
 
       const created = await prisma.position.create({
         data: {
-          companyId: req.user!.companyId!,
+          companyId,
           title: title.trim(),
           cboCode: cboCode ? cboCode.trim() : null,
           description: description || null,

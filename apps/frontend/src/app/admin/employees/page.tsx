@@ -13,6 +13,9 @@ import {
   Loader2,
   Building,
   Briefcase,
+  CheckCircle2,
+  AlertCircle,
+  X,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/auth-context';
@@ -21,6 +24,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardContent } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Modal } from '@/components/ui/Modal';
 import { formatCPF, canManageEmployees, Employee, Department } from '@pontuarh/shared';
 
 export default function EmployeesListPage() {
@@ -32,6 +36,8 @@ export default function EmployeesListPage() {
   const [selectedDept, setSelectedDept] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [confirmTarget, setConfirmTarget] = useState<{ id: string; name: string; currentStatus: string } | null>(null);
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const fetchEmployees = async () => {
     setLoading(true);
@@ -61,17 +67,31 @@ export default function EmployeesListPage() {
     fetchEmployees();
   };
 
-  const handleToggleStatus = async (id: string, currentStatus: string) => {
+  const handleToggleClick = (emp: Employee) => {
+    setConfirmTarget({ id: emp.id, name: emp.fullName, currentStatus: emp.status });
+  };
+
+  const executeToggleStatus = async () => {
+    if (!confirmTarget) return;
+    const { id, name, currentStatus } = confirmTarget;
     setActionLoadingId(id);
+
     try {
       await api.patch(`/employees/${id}/toggle-status`);
+      const newStatus = currentStatus === 'ATIVO' ? ('INATIVO' as any) : ('ATIVO' as any);
       setEmployees((prev) =>
-        prev.map((emp) =>
-          emp.id === id ? { ...emp, status: currentStatus === 'ATIVO' ? ('INATIVO' as any) : ('ATIVO' as any) } : emp
-        )
+        prev.map((emp) => (emp.id === id ? { ...emp, status: newStatus } : emp))
       );
+      setFeedback({
+        type: 'success',
+        message: `Vínculo de ${name} foi ${newStatus === 'ATIVO' ? 'reativado' : 'inativado'} com sucesso.`,
+      });
+      setConfirmTarget(null);
     } catch (err: any) {
-      alert(err.message || 'Erro ao alterar status.');
+      setFeedback({
+        type: 'error',
+        message: err.message || 'Erro ao alterar status do colaborador.',
+      });
     } finally {
       setActionLoadingId(null);
     }
@@ -96,6 +116,29 @@ export default function EmployeesListPage() {
         }
       />
 
+      {/* Feedback Banner */}
+      {feedback && (
+        <div
+          className={`p-4 rounded-xl border flex items-center justify-between text-xs font-semibold ${
+            feedback.type === 'success'
+              ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300'
+              : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {feedback.type === 'success' ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            )}
+            <span>{feedback.message}</span>
+          </div>
+          <button onClick={() => setFeedback(null)} className="text-slate-400 hover:text-slate-600">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Barra de Filtros e Busca */}
       <Card>
         <CardContent className="p-4">
@@ -111,11 +154,11 @@ export default function EmployeesListPage() {
               />
             </div>
 
-            <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
               <select
                 value={selectedDept}
                 onChange={(e) => setSelectedDept(e.target.value)}
-                className="px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none text-slate-700 dark:text-slate-300"
+                className="flex-1 sm:flex-initial max-w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none text-slate-700 dark:text-slate-300"
               >
                 <option value="">Todos os Departamentos</option>
                 {departments.map((d) => (
@@ -128,7 +171,7 @@ export default function EmployeesListPage() {
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
-                className="px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none text-slate-700 dark:text-slate-300"
+                className="flex-1 sm:flex-initial max-w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none text-slate-700 dark:text-slate-300"
               >
                 <option value="">Todos os Status</option>
                 <option value="ATIVO">Ativo</option>
@@ -264,7 +307,7 @@ export default function EmployeesListPage() {
                             <button
                               title={emp.status === 'ATIVO' ? 'Desativar vínculo' : 'Reativar vínculo'}
                               disabled={actionLoadingId === emp.id}
-                              onClick={() => handleToggleStatus(emp.id, emp.status)}
+                              onClick={() => handleToggleClick(emp)}
                               className={`p-1.5 rounded-lg transition-colors ${
                                 emp.status === 'ATIVO'
                                   ? 'text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30'
@@ -288,6 +331,46 @@ export default function EmployeesListPage() {
           </div>
         )}
       </Card>
+
+      {/* Modal de Confirmação de Status */}
+      <Modal
+        isOpen={!!confirmTarget}
+        onClose={() => setConfirmTarget(null)}
+        title="Confirmar Alteração de Vínculo"
+        description="Esta alteração impactará o acesso do colaborador ao portal e a apuração de ponto."
+        maxWidth="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-slate-700 dark:text-slate-300">
+            Deseja realmente{' '}
+            <strong className="text-slate-900 dark:text-slate-100">
+              {confirmTarget?.currentStatus === 'ATIVO' ? 'inativar' : 'reativar'}
+            </strong>{' '}
+            o vínculo do colaborador{' '}
+            <strong className="text-slate-900 dark:text-slate-100">{confirmTarget?.name}</strong>?
+          </p>
+
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <Button variant="ghost" onClick={() => setConfirmTarget(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant={confirmTarget?.currentStatus === 'ATIVO' ? 'danger' : 'primary'}
+              onClick={executeToggleStatus}
+              disabled={!!actionLoadingId}
+            >
+              {actionLoadingId ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <span>Processando...</span>
+                </>
+              ) : (
+                <span>Confirmar</span>
+              )}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
