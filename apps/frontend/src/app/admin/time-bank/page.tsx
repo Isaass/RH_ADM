@@ -29,6 +29,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
+import { toast } from '@/components/ui/sonner';
 import { api } from '@/lib/api';
 import {
   TimeBankPolicy,
@@ -91,7 +92,18 @@ export default function AdminTimeBankPage() {
   const [newPolicyIsDefault, setNewPolicyIsDefault] = useState(false);
   const [isSubmittingPolicy, setIsSubmittingPolicy] = useState(false);
 
-  const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [feedbackMsg, setFeedbackMsgState] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const setFeedbackMsg = (fb: { type: 'success' | 'error'; text: string } | null) => {
+    setFeedbackMsgState(fb);
+    if (fb) {
+      if (fb.type === 'error') {
+        toast.error(fb.text);
+      } else {
+        toast.success(fb.text);
+      }
+    }
+  };
 
   // Carregamento de dados
   const loadData = async () => {

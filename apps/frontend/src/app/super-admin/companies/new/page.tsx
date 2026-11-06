@@ -17,6 +17,7 @@ import {
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { toast } from '@/components/ui/sonner';
 import { api } from '@/lib/api';
 import { isValidCNPJ, formatCNPJ, formatPhoneBR, formatCEP, CreateCompanyDTO } from '@pontuarh/shared';
 
@@ -104,9 +105,12 @@ export default function SuperAdminNewCompanyPage() {
       };
 
       const res = await api.post<any>('/platform/companies', payload);
+      toast.success('Empresa cadastrada com sucesso!');
       router.push(`/super-admin/companies/${res.id}?created=true`);
     } catch (err: any) {
-      setError(err.message || 'Falha ao cadastrar empresa na plataforma.');
+      const msg = err.message || 'Falha ao cadastrar empresa na plataforma.';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

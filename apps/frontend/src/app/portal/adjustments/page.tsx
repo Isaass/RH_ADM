@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
+import { toast } from '@/components/ui/sonner';
 import { api } from '@/lib/api';
 import { TimeAdjustmentRequest, AdjustmentType, TimeEntryType, RequestStatus } from '@pontuarh/shared';
 
@@ -76,6 +77,7 @@ export default function PortalAdjustmentsPage() {
       });
 
       setSuccessMsg('Solicitação enviada com sucesso ao seu gestor!');
+      toast.success('Solicitação enviada com sucesso ao seu gestor!');
       setModalOpen(false);
       // Reset form
       setFormDate('');
@@ -84,7 +86,9 @@ export default function PortalAdjustmentsPage() {
       setFormAttachmentUrl('');
       await fetchRequests();
     } catch (err: any) {
-      setErrorMsg(err.message || 'Falha ao enviar solicitação.');
+      const msg = err.message || 'Falha ao enviar solicitação.';
+      setErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -94,9 +98,10 @@ export default function PortalAdjustmentsPage() {
     if (!confirm('Deseja realmente cancelar esta solicitação de ajuste?')) return;
     try {
       await api.patch(`/adjustments/${id}/cancel`);
+      toast.success('Solicitação de ajuste cancelada.');
       await fetchRequests();
     } catch (err: any) {
-      alert(err.message || 'Erro ao cancelar solicitação.');
+      toast.error(err.message || 'Erro ao cancelar solicitação.');
     }
   };
 

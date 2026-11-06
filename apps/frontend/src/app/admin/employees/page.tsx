@@ -25,6 +25,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Card, CardContent } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Modal } from '@/components/ui/Modal';
+import { toast } from '@/components/ui/sonner';
 import { formatCPF, canManageEmployees, Employee, Department } from '@pontuarh/shared';
 
 export default function EmployeesListPage() {
@@ -82,16 +83,20 @@ export default function EmployeesListPage() {
       setEmployees((prev) =>
         prev.map((emp) => (emp.id === id ? { ...emp, status: newStatus } : emp))
       );
+      const successMsg = `Vínculo de ${name} foi ${newStatus === 'ATIVO' ? 'reativado' : 'inativado'} com sucesso.`;
       setFeedback({
         type: 'success',
-        message: `Vínculo de ${name} foi ${newStatus === 'ATIVO' ? 'reativado' : 'inativado'} com sucesso.`,
+        message: successMsg,
       });
+      toast.success(successMsg);
       setConfirmTarget(null);
     } catch (err: any) {
+      const errorMsg = err.message || 'Erro ao alterar status do colaborador.';
       setFeedback({
         type: 'error',
-        message: err.message || 'Erro ao alterar status do colaborador.',
+        message: errorMsg,
       });
+      toast.error(errorMsg);
     } finally {
       setActionLoadingId(null);
     }

@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
+import { toast } from '@/components/ui/sonner';
 import { formatCNPJ, formatPhoneBR, formatCEP, canManageEmployees } from '@pontuarh/shared';
 
 export default function CompanySettingsPage() {
@@ -121,10 +122,13 @@ export default function CompanySettingsPage() {
       });
 
       setFeedback({ type: 'success', message: 'Dados da organização atualizados com sucesso.' });
+      toast.success('Dados da organização atualizados com sucesso.');
       setEditModalOpen(false);
       await loadCompanyData();
     } catch (err: any) {
-      setFormError(err.message || 'Falha ao atualizar dados da empresa.');
+      const msg = err.message || 'Falha ao atualizar dados da empresa.';
+      setFormError(msg);
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }

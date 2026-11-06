@@ -30,6 +30,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
+import { toast } from '@/components/ui/sonner';
 import { api } from '@/lib/api';
 import {
   formatCNPJ,
@@ -60,7 +61,18 @@ export default function AdminOnboardingPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<OnboardingStatus | null>(null);
-  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [feedback, setFeedbackState] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  const setFeedback = (fb: { type: 'success' | 'error'; message: string } | null) => {
+    setFeedbackState(fb);
+    if (fb) {
+      if (fb.type === 'error') {
+        toast.error(fb.message);
+      } else {
+        toast.success(fb.message);
+      }
+    }
+  };
 
   // Etapa 1: Dados da Empresa
   const [companyForm, setCompanyForm] = useState({

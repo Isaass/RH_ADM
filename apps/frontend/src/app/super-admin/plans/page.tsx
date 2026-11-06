@@ -25,6 +25,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
+import { toast } from '@/components/ui/sonner';
 import { api } from '@/lib/api';
 import { Plan, CreatePlanDTO, UpdatePlanDTO, PlanFeature, formatCurrencyBRL } from '@pontuarh/shared';
 
@@ -73,6 +74,11 @@ export default function SuperAdminPlansPage() {
 
   const showFeedback = (type: 'success' | 'error', message: string) => {
     setFeedback({ type, message });
+    if (type === 'error') {
+      toast.error(message);
+    } else {
+      toast.success(message);
+    }
     setTimeout(() => setFeedback(null), 5000);
   };
 
@@ -84,7 +90,9 @@ export default function SuperAdminPlansPage() {
       setPlans(data || []);
     } catch (err: any) {
       console.error('Erro ao carregar planos:', err);
-      setError(err.message || 'Erro ao carregar planos cadastrados.');
+      const msg = err.message || 'Erro ao carregar planos cadastrados.';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

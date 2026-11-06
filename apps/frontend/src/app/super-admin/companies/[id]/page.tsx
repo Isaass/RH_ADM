@@ -36,6 +36,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
+import { toast } from '@/components/ui/sonner';
 import { api } from '@/lib/api';
 import {
   Subscription,
@@ -95,7 +96,18 @@ export default function CompanyDetailPage() {
   const [allPlans, setAllPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'details' | 'admins' | 'subscription'>('details');
-  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [feedback, setFeedbackState] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  const setFeedback = (fb: { type: 'success' | 'error'; message: string } | null) => {
+    setFeedbackState(fb);
+    if (fb) {
+      if (fb.type === 'error') {
+        toast.error(fb.message);
+      } else {
+        toast.success(fb.message);
+      }
+    }
+  };
 
   // Edit company state
   const [isEditing, setIsEditing] = useState(false);

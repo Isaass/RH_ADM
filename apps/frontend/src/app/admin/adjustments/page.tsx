@@ -22,6 +22,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
+import { toast } from '@/components/ui/sonner';
 import { api } from '@/lib/api';
 import { TimeAdjustmentRequest, RequestStatus } from '@pontuarh/shared';
 
@@ -74,6 +75,7 @@ export default function AdminAdjustmentsPage() {
 
     if (status === RequestStatus.RECUSADA && !decisionNotes.trim()) {
       setErrorMsg('É obrigatório preencher a justificativa da recusa.');
+      toast.error('É obrigatório preencher a justificativa da recusa.');
       return;
     }
 
@@ -85,9 +87,12 @@ export default function AdminAdjustmentsPage() {
       });
 
       setReviewModalOpen(false);
+      toast.success(status === RequestStatus.APROVADA ? 'Solicitação aprovada com sucesso!' : 'Solicitação recusada.');
       await fetchRequests();
     } catch (err: any) {
-      setErrorMsg(err.message || 'Erro ao processar decisão.');
+      const msg = err.message || 'Erro ao processar decisão.';
+      setErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setIsDeciding(false);
     }

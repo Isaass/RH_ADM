@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
+import { toast } from '@/components/ui/sonner';
 import { isValidCPF, formatCPF, formatPhoneBR, Department, Position } from '@pontuarh/shared';
 
 export default function NewEmployeePage() {
@@ -89,9 +90,12 @@ export default function NewEmployeePage() {
         baseSalary: baseSalary ? parseFloat(baseSalary) : null,
       });
 
+      toast.success('Colaborador cadastrado com sucesso!');
       router.push('/admin/employees');
     } catch (err: any) {
-      setError(err.message || 'Erro ao cadastrar colaborador.');
+      const msg = err.message || 'Erro ao cadastrar colaborador.';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

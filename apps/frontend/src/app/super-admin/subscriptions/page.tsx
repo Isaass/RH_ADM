@@ -30,6 +30,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
+import { toast } from '@/components/ui/sonner';
 import { api } from '@/lib/api';
 import {
   Subscription,
@@ -84,6 +85,11 @@ export default function SuperAdminSubscriptionsPage() {
 
   const showFeedback = (type: 'success' | 'error', message: string) => {
     setFeedback({ type, message });
+    if (type === 'error') {
+      toast.error(message);
+    } else {
+      toast.success(message);
+    }
     setTimeout(() => setFeedback(null), 5000);
   };
 

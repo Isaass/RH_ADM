@@ -23,6 +23,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { toast } from '@/components/ui/sonner';
 import { api } from '@/lib/api';
 import { CompanyUsage, PlanFeature, formatCurrencyBRL } from '@pontuarh/shared';
 
@@ -52,7 +53,9 @@ export default function AdminSubscriptionPage() {
       setUsage(data);
     } catch (err: any) {
       console.error('Erro ao consultar assinatura da empresa:', err);
-      setError(err.message || 'Falha ao carregar informações do plano da empresa.');
+      const msg = err.message || 'Falha ao carregar informações do plano da empresa.';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

@@ -35,6 +35,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
+import { toast } from '@/components/ui/sonner';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/auth-context';
 import {
@@ -125,6 +126,11 @@ export default function AdminVacationsPage() {
 
   const showFeedback = (type: 'success' | 'error', text: string) => {
     setFeedbackMsg({ type, text });
+    if (type === 'error') {
+      toast.error(text);
+    } else {
+      toast.success(text);
+    }
     setTimeout(() => setFeedbackMsg(null), 5000);
   };
 

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { Logo } from '@/components/ui/Logo';
+import { toast } from '@/components/ui/sonner';
 import { UserRole } from '@pontuarh/shared';
 
 export default function LoginPage() {
@@ -35,7 +36,9 @@ export default function LoginPage() {
         router.push('/admin/dashboard');
       }
     } catch (err: any) {
-      setError(err.message || 'Falha ao autenticar. Verifique seus dados.');
+      const msg = err.message || 'Falha ao autenticar. Verifique seus dados.';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

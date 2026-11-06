@@ -38,6 +38,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { StatCard } from '@/components/ui/StatCard';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { toast } from '@/components/ui/sonner';
 import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/context/auth-context';
 import {
@@ -94,6 +95,11 @@ export default function AdminPayrollPage() {
 
   const showFeedback = (type: 'success' | 'error', message: string) => {
     setFeedback({ type, message });
+    if (type === 'error') {
+      toast.error(message);
+    } else {
+      toast.success(message);
+    }
     setTimeout(() => {
       setFeedback(null);
     }, 5000);

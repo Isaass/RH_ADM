@@ -21,6 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
+import { toast } from '@/components/ui/sonner';
 import { WorkSchedule, ScheduleType } from '@pontuarh/shared';
 
 export default function SchedulesPage() {
@@ -156,9 +157,12 @@ export default function SchedulesPage() {
         await api.post('/schedules', payload);
       }
       setModalOpen(false);
+      toast.success(formId ? 'Jornada atualizada com sucesso!' : 'Jornada cadastrada com sucesso!');
       await fetchSchedules();
     } catch (err: any) {
-      setErrorMsg(err.message || 'Erro ao salvar jornada de trabalho.');
+      const msg = err.message || 'Erro ao salvar jornada de trabalho.';
+      setErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -167,9 +171,10 @@ export default function SchedulesPage() {
   const handleToggleStatus = async (id: string) => {
     try {
       await api.patch(`/schedules/${id}/status`);
+      toast.success('Status da jornada alterado com sucesso!');
       await fetchSchedules();
     } catch (err: any) {
-      alert(err.message || 'Erro ao alternar status da jornada.');
+      toast.error(err.message || 'Erro ao alternar status da jornada.');
     }
   };
 
@@ -181,10 +186,11 @@ export default function SchedulesPage() {
         employeeIds: selectedEmployeeIds,
       });
       setAssignModalOpen(false);
+      toast.success('Colaboradores vinculados com sucesso!');
       await fetchSchedules();
       await fetchEmployees();
     } catch (err: any) {
-      alert(err.message || 'Erro ao associar colaboradores.');
+      toast.error(err.message || 'Erro ao associar colaboradores.');
     } finally {
       setIsSubmitting(false);
     }

@@ -21,6 +21,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { toast } from '@/components/ui/sonner';
 import { api } from '@/lib/api';
 import { TimesheetMonthSummary } from '@pontuarh/shared';
 
@@ -40,7 +41,9 @@ export default function PortalTimesheetPage() {
       const result = await api.get<TimesheetMonthSummary>(`/timesheet/my-summary?competence=${comp}`);
       setData(result);
     } catch (err: any) {
-      setError(err.message || 'Falha ao carregar espelho de ponto.');
+      const msg = err.message || 'Falha ao carregar espelho de ponto.';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

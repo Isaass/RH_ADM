@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
+import { toast } from '@/components/ui/sonner';
 import { Badge } from '@/components/ui/Badge';
 import { Department, Position, canManageEmployees } from '@pontuarh/shared';
 
@@ -63,9 +64,12 @@ export default function DepartmentsAndPositionsPage() {
       setNewDeptName('');
       setNewDeptCode('');
       setDeptModalOpen(false);
+      toast.success('Departamento cadastrado com sucesso!');
       fetchData();
     } catch (err: any) {
-      setDeptError(err.message || 'Erro ao cadastrar departamento. Verifique se o nome já não está em uso.');
+      const msg = err.message || 'Erro ao cadastrar departamento. Verifique se o nome já não está em uso.';
+      setDeptError(msg);
+      toast.error(msg);
     } finally {
       setModalLoading(false);
     }
@@ -85,9 +89,12 @@ export default function DepartmentsAndPositionsPage() {
       setNewPosCbo('');
       setNewPosDesc('');
       setPosModalOpen(false);
+      toast.success('Cargo cadastrado com sucesso!');
       fetchData();
     } catch (err: any) {
-      setPosError(err.message || 'Erro ao cadastrar cargo. Verifique se o título já não está em uso.');
+      const msg = err.message || 'Erro ao cadastrar cargo. Verifique se o título já não está em uso.';
+      setPosError(msg);
+      toast.error(msg);
     } finally {
       setModalLoading(false);
     }

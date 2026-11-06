@@ -23,6 +23,7 @@ import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
+import { toast } from '@/components/ui/sonner';
 import { api } from '@/lib/api';
 import { TimeEntryType } from '@pontuarh/shared';
 
@@ -79,10 +80,13 @@ export default function PortalHomePage() {
       const response = await api.post<any>('/time-tracking/punch', payload);
       setSuccessReceipt(response);
       setSelectedPunchType('');
+      toast.success('Ponto registrado com sucesso!');
       // Atualizar lista de marcações de hoje
       await fetchTodayPunches();
     } catch (err: any) {
-      setErrorMsg(err.message || 'Falha ao registrar ponto. Tente novamente.');
+      const msg = err.message || 'Falha ao registrar ponto. Tente novamente.';
+      setErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }
